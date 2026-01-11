@@ -2,6 +2,9 @@
 const GRAVITY = 0.5;
 const WIND_STRENGTH = 0.3;
 const MAX_THROW_FORCE = 20;
+const MIN_DRAG_DISTANCE = 10;
+const WIND_EFFECT_RADIUS = 150;
+const WIND_VERTICAL_RANGE = 50;
 
 // Game state
 let canvas, ctx;
@@ -105,7 +108,7 @@ function handleEnd(e) {
     const dy = aimStart.y - aimCurrent.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    if (distance > 10) { // Minimum drag distance
+    if (distance > MIN_DRAG_DISTANCE) { // Minimum drag distance
         const force = Math.min(distance / 20, MAX_THROW_FORCE);
         const angle = Math.atan2(dy, dx);
         
@@ -117,7 +120,8 @@ function handleEnd(e) {
             vx: Math.cos(angle) * force,
             vy: Math.sin(angle) * force,
             rotation: 0,
-            rotationSpeed: 0.2
+            rotationSpeed: 0.2,
+            crumplePoints: generateCrumplePoints() // Pre-generate crumple effect
         };
         
         gameState = 'throwing';
@@ -138,6 +142,18 @@ function getInputPosition(e) {
     };
 }
 
+function generateCrumplePoints() {
+    // Generate deterministic crumpled paper points
+    const points = [];
+    const numPoints = 8;
+    for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2;
+        const radius = 1 + (Math.sin(i * 2.5) * 0.15); // Deterministic variation
+        points.push({ angle, radius });
+    }
+    return points;
+}
+
 function update() {
     // Update fan
     fan.bladeAngle += fan.rotationSpeed;
@@ -155,8 +171,8 @@ function update() {
         
         // Apply wind effect from fan
         const distanceToFan = Math.abs(paperBall.y - fan.y);
-        if (distanceToFan < 150 && paperBall.y < fan.y + 50) {
-            const windEffect = WIND_STRENGTH * (1 - distanceToFan / 150);
+        if (distanceToFan < WIND_EFFECT_RADIUS && paperBall.y < fan.y + WIND_VERTICAL_RANGE) {
+            const windEffect = WIND_STRENGTH * (1 - distanceToFan / WIND_EFFECT_RADIUS);
             paperBall.vx += fan.direction * windEffect;
         }
         
@@ -366,14 +382,12 @@ function drawPaperBall() {
     ctx.strokeStyle = '#BDC3C7';
     ctx.lineWidth = 2;
     
-    // Crumpled paper effect
+    // Crumpled paper effect using pre-generated points
     ctx.beginPath();
-    const points = 8;
-    for (let i = 0; i < points; i++) {
-        const angle = (i / points) * Math.PI * 2;
-        const radius = paperBall.radius + (Math.random() * 3 - 1.5);
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
+    for (let i = 0; i < paperBall.crumplePoints.length; i++) {
+        const point = paperBall.crumplePoints[i];
+        const x = Math.cos(point.angle) * paperBall.radius * point.radius;
+        const y = Math.sin(point.angle) * paperBall.radius * point.radius;
         
         if (i === 0) {
             ctx.moveTo(x, y);
@@ -403,7 +417,7 @@ function drawAimLine() {
     const dy = aimCurrent.y - aimStart.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    if (distance > 10) {
+    if (distance > MIN_DRAG_DISTANCE) {
         // Draw arrow from hand
         ctx.strokeStyle = '#E74C3C';
         ctx.lineWidth = 3;
