@@ -255,88 +255,317 @@ function draw() {
 }
 
 function drawOffice() {
-    // Floor
-    ctx.fillStyle = '#8B7355';
-    ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+    // Sky/Wall gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(0.6, '#B0D4E8');
+    gradient.addColorStop(1, '#D4E8F5');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height - 50);
     
-    // Floor line
-    ctx.strokeStyle = '#654321';
-    ctx.lineWidth = 2;
+    // Window with frame
+    const windowX = canvas.width * 0.7;
+    const windowY = 50;
+    const windowW = 150;
+    const windowH = 200;
+    
+    // Window frame
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(windowX - 10, windowY - 10, windowW + 20, windowH + 20);
+    ctx.fillStyle = '#6FA8DC';
+    ctx.fillRect(windowX, windowY, windowW, windowH);
+    
+    // Window panes
+    ctx.strokeStyle = '#8B4513';
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(0, canvas.height - 50);
-    ctx.lineTo(canvas.width, canvas.height - 50);
+    ctx.moveTo(windowX + windowW/2, windowY);
+    ctx.lineTo(windowX + windowW/2, windowY + windowH);
+    ctx.moveTo(windowX, windowY + windowH/2);
+    ctx.lineTo(windowX + windowW, windowY + windowH/2);
     ctx.stroke();
     
+    // Clouds outside window
+    drawCloud(windowX + 40, windowY + 60, 20);
+    drawCloud(windowX + 100, windowY + 100, 15);
+    
     // Desk
+    ctx.fillStyle = '#8B6F47';
+    ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+    
+    // Desk edge highlight
     ctx.fillStyle = '#A0826D';
-    ctx.fillRect(0, canvas.height - 50, canvas.width, 10);
+    ctx.fillRect(0, canvas.height - 80, canvas.width, 8);
+    
+    // Desk shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, canvas.height - 72, canvas.width, 5);
+    
+    // Wood texture lines on desk
+    ctx.strokeStyle = 'rgba(101, 67, 33, 0.3)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 70 + i * 15);
+        ctx.lineTo(canvas.width, canvas.height - 70 + i * 15);
+        ctx.stroke();
+    }
+    
+    // Office items - coffee mug
+    const mugX = 100;
+    const mugY = canvas.height - 120;
+    ctx.fillStyle = '#8B0000';
+    ctx.fillRect(mugX, mugY, 40, 50);
+    ctx.fillStyle = '#A52A2A';
+    ctx.fillRect(mugX, mugY, 40, 10);
+    
+    // Mug handle
+    ctx.strokeStyle = '#8B0000';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(mugX + 40, mugY + 25, 12, -Math.PI/2, Math.PI/2);
+    ctx.stroke();
+    
+    // Steam from coffee
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.6)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(mugX + 10 + i * 10, mugY - 5);
+        ctx.quadraticCurveTo(mugX + 15 + i * 10, mugY - 20, mugX + 10 + i * 10, mugY - 35);
+        ctx.stroke();
+    }
+    
+    // Pen holder
+    const penX = canvas.width - 200;
+    const penY = canvas.height - 140;
+    ctx.fillStyle = '#4169E1';
+    ctx.fillRect(penX, penY, 35, 60);
+    ctx.fillStyle = '#5A7FD6';
+    ctx.ellipse(penX + 17.5, penY, 17.5, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Pens in holder
+    for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = ['#FFD700', '#FF6347', '#32CD32'][i];
+        ctx.fillRect(penX + 8 + i * 10, penY - 20, 4, 25);
+        ctx.beginPath();
+        ctx.arc(penX + 10 + i * 10, penY - 20, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawCloud(x, y, size) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.8, y - size * 0.3, size * 0.7, 0, Math.PI * 2);
+    ctx.arc(x + size * 1.3, y, size * 0.8, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function drawHand() {
     ctx.save();
     ctx.translate(hand.x + hand.width / 2, hand.y + hand.height / 2);
     
-    // Palm
-    ctx.fillStyle = '#FDBCB4';
+    // Arm/Wrist
+    ctx.fillStyle = '#FFD1B3';
+    ctx.fillRect(-15, 20, 30, 40);
+    
+    // Wrist shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(-15, 20, 30, 5);
+    
+    // Palm with gradient
+    const palmGradient = ctx.createRadialGradient(0, 10, 5, 0, 10, 30);
+    palmGradient.addColorStop(0, '#FFD1B3');
+    palmGradient.addColorStop(1, '#FFC299');
+    ctx.fillStyle = palmGradient;
     ctx.beginPath();
-    ctx.ellipse(0, 10, 25, 30, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 10, 28, 33, 0, 0, Math.PI * 2);
     ctx.fill();
     
-    // Fingers
+    // Palm outline
+    ctx.strokeStyle = '#E6A57A';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Fingers with better cartoon style
     for (let i = 0; i < 4; i++) {
-        ctx.fillStyle = '#FDBCB4';
-        ctx.fillRect(-20 + i * 10, -15, 8, 25);
+        const fingerX = -22 + i * 11;
         
-        // Finger tips
+        // Finger shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(fingerX + 2, -13, 9, 27);
+        
+        // Finger
+        ctx.fillStyle = '#FFD1B3';
+        ctx.fillRect(fingerX, -15, 9, 27);
+        
+        // Finger outline
+        ctx.strokeStyle = '#E6A57A';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(fingerX, -15, 9, 27);
+        
+        // Finger tip
+        ctx.fillStyle = '#FFD1B3';
         ctx.beginPath();
-        ctx.arc(-16 + i * 10, -15, 4, 0, Math.PI * 2);
+        ctx.arc(fingerX + 4.5, -15, 5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = '#E6A57A';
+        ctx.stroke();
+        
+        // Knuckle line
+        ctx.strokeStyle = '#E6A57A';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(fingerX, -3);
+        ctx.lineTo(fingerX + 9, -3);
+        ctx.stroke();
     }
     
-    // Thumb
+    // Thumb with improved style
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.beginPath();
-    ctx.arc(-25, 5, 8, 0, Math.PI * 2);
+    ctx.arc(-26, 7, 10, 0, Math.PI * 2);
     ctx.fill();
+    
+    ctx.fillStyle = '#FFD1B3';
+    ctx.beginPath();
+    ctx.arc(-28, 5, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#E6A57A';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Thumb knuckle
+    ctx.strokeStyle = '#E6A57A';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-32, 10);
+    ctx.lineTo(-24, 10);
+    ctx.stroke();
     
     ctx.restore();
 }
 
 function drawTrashCan() {
-    // Trash can body
-    ctx.fillStyle = '#2C3E50';
-    ctx.fillRect(trashCan.x, trashCan.y + 10, trashCan.width, trashCan.height - 10);
+    // Shadow under trash can
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.ellipse(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height + 5, 
+                trashCan.width / 2, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
     
-    // Opening
-    ctx.fillStyle = '#1A252F';
-    ctx.fillRect(trashCan.x + 5, trashCan.y, trashCan.openingWidth, 15);
+    // Trash can body with gradient
+    const canGradient = ctx.createLinearGradient(trashCan.x, 0, trashCan.x + trashCan.width, 0);
+    canGradient.addColorStop(0, '#2C3E50');
+    canGradient.addColorStop(0.5, '#34495E');
+    canGradient.addColorStop(1, '#2C3E50');
+    ctx.fillStyle = canGradient;
     
-    // Rim
-    ctx.fillStyle = '#34495E';
-    ctx.fillRect(trashCan.x - 5, trashCan.y, trashCan.width + 10, 10);
-    
-    // Recycling symbol
-    ctx.strokeStyle = '#27AE60';
-    ctx.lineWidth = 3;
+    // Slightly tapered body
     ctx.beginPath();
-    ctx.arc(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2, 20, 0, Math.PI * 2);
+    ctx.moveTo(trashCan.x + 5, trashCan.y + 10);
+    ctx.lineTo(trashCan.x, trashCan.y + trashCan.height);
+    ctx.lineTo(trashCan.x + trashCan.width, trashCan.y + trashCan.height);
+    ctx.lineTo(trashCan.x + trashCan.width - 5, trashCan.y + 10);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Body outline
+    ctx.strokeStyle = '#1A252F';
+    ctx.lineWidth = 2;
     ctx.stroke();
     
-    ctx.font = 'bold 24px Arial';
+    // Opening (darker)
+    ctx.fillStyle = '#0D1117';
+    ctx.fillRect(trashCan.x + 8, trashCan.y, trashCan.openingWidth - 6, 15);
+    
+    // Rim with 3D effect
+    const rimGradient = ctx.createLinearGradient(0, trashCan.y, 0, trashCan.y + 12);
+    rimGradient.addColorStop(0, '#4A5F7F');
+    rimGradient.addColorStop(0.5, '#34495E');
+    rimGradient.addColorStop(1, '#2C3E50');
+    ctx.fillStyle = rimGradient;
+    
+    ctx.beginPath();
+    ctx.ellipse(trashCan.x + trashCan.width / 2, trashCan.y + 5, 
+                trashCan.width / 2 + 5, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#1A252F';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Recycling symbol with better styling
+    ctx.strokeStyle = '#27AE60';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2 + 5, 22, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Inner circle
+    ctx.strokeStyle = '#2ECC71';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2 + 5, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Recycling arrows (♻)
+    ctx.font = 'bold 28px Arial';
     ctx.fillStyle = '#27AE60';
     ctx.textAlign = 'center';
-    ctx.fillText('♻', trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2 + 8);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('♻', trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2 + 5);
+    
+    // Shine effect on can
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.beginPath();
+    ctx.moveTo(trashCan.x + 10, trashCan.y + 20);
+    ctx.lineTo(trashCan.x + 20, trashCan.y + 20);
+    ctx.lineTo(trashCan.x + 18, trashCan.y + trashCan.height - 10);
+    ctx.lineTo(trashCan.x + 8, trashCan.y + trashCan.height - 10);
+    ctx.closePath();
+    ctx.fill();
 }
 
 function drawFan() {
     ctx.save();
     ctx.translate(fan.x, fan.y);
     
-    // Fan base
-    ctx.fillStyle = '#95A5A6';
-    ctx.fillRect(-10, 0, 20, 60);
+    // Fan base/stand with gradient
+    const baseGradient = ctx.createLinearGradient(-12, 0, 12, 0);
+    baseGradient.addColorStop(0, '#7F8C8D');
+    baseGradient.addColorStop(0.5, '#95A5A6');
+    baseGradient.addColorStop(1, '#7F8C8D');
+    ctx.fillStyle = baseGradient;
+    ctx.fillRect(-12, 0, 24, 65);
     
-    // Fan circle
-    ctx.fillStyle = '#BDC3C7';
+    // Base outline
+    ctx.strokeStyle = '#5D6D6E';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-12, 0, 24, 65);
+    
+    // Base bottom (foot)
+    ctx.fillStyle = '#5D6D6E';
+    ctx.fillRect(-18, 60, 36, 8);
+    ctx.strokeStyle = '#34495E';
+    ctx.strokeRect(-18, 60, 36, 8);
+    
+    // Fan cage/guard (outer circle)
+    ctx.strokeStyle = '#7F8C8D';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, fan.radius + 5, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Fan circle background
+    const fanGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, fan.radius);
+    fanGradient.addColorStop(0, '#E8E8E8');
+    fanGradient.addColorStop(0.7, '#BDC3C7');
+    fanGradient.addColorStop(1, '#95A5A6');
+    ctx.fillStyle = fanGradient;
     ctx.beginPath();
     ctx.arc(0, 0, fan.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -345,31 +574,82 @@ function drawFan() {
     ctx.lineWidth = 2;
     ctx.stroke();
     
-    // Fan blades
+    // Fan blades with rotation
     ctx.rotate(fan.bladeAngle);
-    ctx.fillStyle = '#34495E';
     
     for (let i = 0; i < 3; i++) {
         ctx.save();
         ctx.rotate((i * Math.PI * 2) / 3);
+        
+        // Blade shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         ctx.beginPath();
-        ctx.ellipse(0, -fan.radius / 2, 8, fan.radius / 2, 0, 0, Math.PI * 2);
+        ctx.ellipse(2, -fan.radius / 2, 10, fan.radius / 2 + 2, 0, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Blade with gradient
+        const bladeGradient = ctx.createLinearGradient(-8, 0, 8, 0);
+        bladeGradient.addColorStop(0, '#2C3E50');
+        bladeGradient.addColorStop(0.5, '#34495E');
+        bladeGradient.addColorStop(1, '#2C3E50');
+        ctx.fillStyle = bladeGradient;
+        ctx.beginPath();
+        ctx.ellipse(0, -fan.radius / 2, 10, fan.radius / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Blade outline
+        ctx.strokeStyle = '#1A252F';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        // Blade highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.ellipse(-3, -fan.radius / 2, 4, fan.radius / 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
         ctx.restore();
     }
     
-    // Center cap
-    ctx.fillStyle = '#2C3E50';
+    // Center cap/motor with 3D effect
+    const capGradient = ctx.createRadialGradient(-3, -3, 2, 0, 0, 12);
+    capGradient.addColorStop(0, '#34495E');
+    capGradient.addColorStop(0.7, '#2C3E50');
+    capGradient.addColorStop(1, '#1A252F');
+    ctx.fillStyle = capGradient;
     ctx.beginPath();
-    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
     ctx.fill();
     
-    // Wind direction indicator
+    ctx.strokeStyle = '#1A252F';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Center screw detail
+    ctx.fillStyle = '#95A5A6';
+    ctx.beginPath();
+    ctx.arc(0, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Wind direction indicator with better styling
     ctx.rotate(-fan.bladeAngle);
+    
+    // Background for indicator
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(0, fan.radius + 38, 18, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = fan.direction > 0 ? '#3498DB' : '#E74C3C';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Arrow
     ctx.fillStyle = fan.direction > 0 ? '#3498DB' : '#E74C3C';
-    ctx.font = 'bold 20px Arial';
+    ctx.font = 'bold 24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(fan.direction > 0 ? '→' : '←', 0, fan.radius + 30);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(fan.direction > 0 ? '→' : '←', 0, fan.radius + 38);
     
     ctx.restore();
 }
@@ -379,10 +659,18 @@ function drawPaperBall() {
     ctx.translate(paperBall.x, paperBall.y);
     ctx.rotate(paperBall.rotation);
     
-    // Paper ball
-    ctx.fillStyle = '#ECF0F1';
-    ctx.strokeStyle = '#BDC3C7';
-    ctx.lineWidth = 2;
+    // Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.beginPath();
+    ctx.arc(2, 2, paperBall.radius + 1, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Paper ball with gradient for 3D effect
+    const ballGradient = ctx.createRadialGradient(-3, -3, 2, 0, 0, paperBall.radius);
+    ballGradient.addColorStop(0, '#FFFFFF');
+    ballGradient.addColorStop(0.5, '#F5F5F5');
+    ballGradient.addColorStop(1, '#D3D3D3');
+    ctx.fillStyle = ballGradient;
     
     // Crumpled paper effect using pre-generated points
     ctx.beginPath();
@@ -399,17 +687,41 @@ function drawPaperBall() {
     }
     ctx.closePath();
     ctx.fill();
+    
+    // Crumple outline
+    ctx.strokeStyle = '#A9A9A9';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     
-    // Paper lines
-    ctx.strokeStyle = '#95A5A6';
+    // Crumple details (wrinkles)
+    ctx.strokeStyle = '#C0C0C0';
     ctx.lineWidth = 1;
+    for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(
+            Math.cos(angle) * paperBall.radius * 0.6,
+            Math.sin(angle) * paperBall.radius * 0.6
+        );
+        ctx.stroke();
+    }
+    
+    // Paper lines for texture
+    ctx.strokeStyle = '#B0B0B0';
+    ctx.lineWidth = 0.8;
     for (let i = 0; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(-paperBall.radius / 2, -paperBall.radius / 2 + i * 5);
         ctx.lineTo(paperBall.radius / 2, -paperBall.radius / 2 + i * 5);
         ctx.stroke();
     }
+    
+    // Highlight for 3D effect
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.beginPath();
+    ctx.arc(-paperBall.radius / 3, -paperBall.radius / 3, paperBall.radius / 4, 0, Math.PI * 2);
+    ctx.fill();
     
     ctx.restore();
 }
