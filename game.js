@@ -5,6 +5,8 @@ const MAX_THROW_FORCE = 20;
 const MIN_DRAG_DISTANCE = 10;
 const WIND_EFFECT_RADIUS = 150;
 const WIND_VERTICAL_RANGE = 50;
+const TRASH_CAN_COLLISION_MARGIN = 5;
+const TRASH_CAN_ENTRY_TOLERANCE = 20;
 
 // Game state
 let canvas, ctx;
@@ -205,13 +207,13 @@ function checkTrashCanCollision() {
     const ballLeft = paperBall.x - paperBall.radius;
     const ballRight = paperBall.x + paperBall.radius;
     
-    const canLeft = trashCan.x + 5;
-    const canRight = trashCan.x + trashCan.width - 5;
+    const canLeft = trashCan.x + TRASH_CAN_COLLISION_MARGIN;
+    const canRight = trashCan.x + trashCan.width - TRASH_CAN_COLLISION_MARGIN;
     const canTop = trashCan.openingY;
     const canBottom = trashCan.y + trashCan.height;
     
     // Check if ball is entering from top and within horizontal bounds
-    if (ballBottom >= canTop && ballTop < canTop + 20 &&
+    if (ballBottom >= canTop && ballTop < canTop + TRASH_CAN_ENTRY_TOLERANCE &&
         paperBall.x >= canLeft && paperBall.x <= canRight &&
         paperBall.vy > 0) {
         return true;
