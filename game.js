@@ -7,10 +7,8 @@ const TRASH_CAN_COLLISION_MARGIN = 5;
 const TRASH_CAN_ENTRY_TOLERANCE = 20;
 
 // Animation constants
-const FAN_CYCLE_TIME = 10; // seconds
 const HAND_CYCLE_TIME = 4; // seconds
 const THROW_INITIAL_VY = -15; // Initial upward velocity
-const THROW_VX_BASE = 8; // Base horizontal velocity
 
 // Game state
 let canvas, ctx;
@@ -54,9 +52,7 @@ const fan = {
     radius: 40,
     bladeAngle: 0,
     rotationSpeed: 0.1,
-    cycleTime: FAN_CYCLE_TIME,
-    minX: 200,
-    maxX: 600
+    direction: 1 // 1 for right, -1 for left
 };
 
 // Sound generation (Web Audio API)
@@ -107,23 +103,19 @@ function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    // Position fan at center top
-    fan.x = canvas.width / 2;
-    fan.y = 150;
+    // Position fan at fixed position (relative to screen)
+    fan.x = canvas.width * 0.5;
+    fan.y = canvas.height * 0.25;
     
     // Position trash can below fan
     trashCan.x = canvas.width / 2 - trashCan.width / 2;
-    trashCan.y = canvas.height - 180;
+    trashCan.y = canvas.height - canvas.height * 0.25;
     trashCan.openingY = trashCan.y;
     
-    // Set hand movement range
-    hand.minX = 100;
-    hand.maxX = canvas.width - 150;
-    hand.y = canvas.height - 120;
-    
-    // Set fan movement range
-    fan.minX = 200;
-    fan.maxX = canvas.width - 200;
+    // Set hand movement range (relative coordinates)
+    hand.minX = canvas.width * 0.15;
+    hand.maxX = canvas.width * 0.85;
+    hand.y = canvas.height - canvas.height * 0.15;
 }
 
 function handleClick(e) {
@@ -148,7 +140,7 @@ function shootBall() {
         x: hand.x + hand.width / 2,
         y: hand.y,
         radius: 10,
-        vx: THROW_VX_BASE,
+        vx: 0, // No initial horizontal velocity
         vy: THROW_INITIAL_VY,
         rotation: 0,
         rotationSpeed: 0.2,
@@ -170,32 +162,28 @@ function generateCrumplePoints() {
 function update(deltaTime) {
     time += deltaTime;
     
-    // Update fan position (10 second cycle, left to right)
-    const fanCycleProgress = (time % fan.cycleTime) / fan.cycleTime;
-    fan.x = fan.minX + (fan.maxX - fan.minX) * fanCycleProgress;
+    // Fan stays stationary but blades rotate
     fan.bladeAngle += fan.rotationSpeed;
     
-    // Update fan direction based on movement
-    const fanSpeed = (fan.maxX - fan.minX) / fan.cycleTime;
-    fan.direction = 1; // Always moving right in the cycle
-    
-    // Update hand position (4 second cycle, left to right)
-    const handCycleProgress = (time % hand.cycleTime) / hand.cycleTime;
-    hand.x = hand.minX + (hand.maxX - hand.minX) * handCycleProgress;
+    // Update hand position using sine wave for smooth oscillation
+    const handCycleProgress = (time / hand.cycleTime) * Math.PI * 2;
+    const handRange = hand.maxX - hand.minX;
+    hand.x = hand.minX + (handRange / 2) + Math.sin(handCycleProgress) * (handRange / 2);
     
     // Update paper ball
     if (gameState === 'throwing' && paperBall) {
         // Apply gravity
         paperBall.vy += GRAVITY;
         
-        // Apply wind effect from fan
-        const distanceToFan = Math.abs(paperBall.y - fan.y);
+        // Apply wind effect from fan only when ball is vertically in front of fan
+        const verticalDistance = Math.abs(paperBall.y - fan.y);
         const horizontalDistance = Math.abs(paperBall.x - fan.x);
         
-        if (distanceToFan < WIND_EFFECT_RADIUS && horizontalDistance < WIND_EFFECT_RADIUS) {
-            const windEffect = WIND_STRENGTH * (1 - distanceToFan / WIND_EFFECT_RADIUS);
-            // Wind blows in the direction the fan is moving
-            paperBall.vx += windEffect;
+        // Wind only affects ball when it's in the vertical range in front of the fan
+        if (verticalDistance < WIND_VERTICAL_RANGE && horizontalDistance < WIND_EFFECT_RADIUS) {
+            const windEffect = WIND_STRENGTH * (1 - horizontalDistance / WIND_EFFECT_RADIUS);
+            // Wind blows left or right based on fan direction
+            paperBall.vx += windEffect * fan.direction;
         }
         
         // Update position
@@ -302,13 +290,13 @@ function drawOffice() {
     gradient.addColorStop(0.6, '#B0D4E8');
     gradient.addColorStop(1, '#D4E8F5');
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height - 50);
+    ctx.fillRect(0, 0, canvas.width, canvas.height - canvas.height * 0.1);
     
-    // Window with frame
+    // Window with frame (responsive positioning)
     const windowX = canvas.width * 0.7;
-    const windowY = 50;
-    const windowW = 150;
-    const windowH = 200;
+    const windowY = canvas.height * 0.08;
+    const windowW = canvas.width * 0.18;
+    const windowH = canvas.height * 0.3;
     
     // Window frame
     ctx.fillStyle = '#8B4513';
@@ -327,72 +315,30 @@ function drawOffice() {
     ctx.stroke();
     
     // Clouds outside window
-    drawCloud(windowX + 40, windowY + 60, 20);
-    drawCloud(windowX + 100, windowY + 100, 15);
+    drawCloud(windowX + windowW * 0.3, windowY + windowH * 0.3, windowW * 0.13);
+    drawCloud(windowX + windowW * 0.7, windowY + windowH * 0.5, windowW * 0.1);
     
-    // Desk
+    // Desk (clean, minimal)
+    const deskHeight = canvas.height * 0.1;
     ctx.fillStyle = '#8B6F47';
-    ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+    ctx.fillRect(0, canvas.height - deskHeight, canvas.width, deskHeight);
     
     // Desk edge highlight
     ctx.fillStyle = '#A0826D';
-    ctx.fillRect(0, canvas.height - 80, canvas.width, 8);
+    ctx.fillRect(0, canvas.height - deskHeight, canvas.width, deskHeight * 0.1);
     
     // Desk shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-    ctx.fillRect(0, canvas.height - 72, canvas.width, 5);
+    ctx.fillRect(0, canvas.height - deskHeight * 0.9, canvas.width, deskHeight * 0.06);
     
-    // Wood texture lines on desk
-    ctx.strokeStyle = 'rgba(101, 67, 33, 0.3)';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 5; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height - 70 + i * 15);
-        ctx.lineTo(canvas.width, canvas.height - 70 + i * 15);
-        ctx.stroke();
-    }
-    
-    // Office items - coffee mug
-    const mugX = 100;
-    const mugY = canvas.height - 120;
-    ctx.fillStyle = '#8B0000';
-    ctx.fillRect(mugX, mugY, 40, 50);
-    ctx.fillStyle = '#A52A2A';
-    ctx.fillRect(mugX, mugY, 40, 10);
-    
-    // Mug handle
-    ctx.strokeStyle = '#8B0000';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(mugX + 40, mugY + 25, 12, -Math.PI/2, Math.PI/2);
-    ctx.stroke();
-    
-    // Steam from coffee
-    ctx.strokeStyle = 'rgba(200, 200, 200, 0.6)';
-    ctx.lineWidth = 2;
+    // Minimal wood texture lines on desk
+    ctx.strokeStyle = 'rgba(101, 67, 33, 0.2)';
+    ctx.lineWidth = 1;
     for (let i = 0; i < 3; i++) {
         ctx.beginPath();
-        ctx.moveTo(mugX + 10 + i * 10, mugY - 5);
-        ctx.quadraticCurveTo(mugX + 15 + i * 10, mugY - 20, mugX + 10 + i * 10, mugY - 35);
+        ctx.moveTo(0, canvas.height - deskHeight * 0.8 + i * deskHeight * 0.25);
+        ctx.lineTo(canvas.width, canvas.height - deskHeight * 0.8 + i * deskHeight * 0.25);
         ctx.stroke();
-    }
-    
-    // Pen holder
-    const penX = canvas.width - 200;
-    const penY = canvas.height - 140;
-    ctx.fillStyle = '#4169E1';
-    ctx.fillRect(penX, penY, 35, 60);
-    ctx.fillStyle = '#5A7FD6';
-    ctx.ellipse(penX + 17.5, penY, 17.5, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Pens in holder
-    for (let i = 0; i < 3; i++) {
-        ctx.fillStyle = ['#FFD700', '#FF6347', '#32CD32'][i];
-        ctx.fillRect(penX + 8 + i * 10, penY - 20, 4, 25);
-        ctx.beginPath();
-        ctx.arc(penX + 10 + i * 10, penY - 20, 3, 0, Math.PI * 2);
-        ctx.fill();
     }
 }
 
