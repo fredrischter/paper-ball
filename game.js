@@ -513,7 +513,7 @@ function drawTrashCan() {
     ctx.stroke();
     
     // Recycling arrows (♻)
-    ctx.font = 'bold 28px Arial';
+    ctx.font = 'bold 28px "Comic Sans MS", Arial';
     ctx.fillStyle = '#27AE60';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -646,7 +646,7 @@ function drawFan() {
     
     // Arrow
     ctx.fillStyle = fan.direction > 0 ? '#3498DB' : '#E74C3C';
-    ctx.font = 'bold 24px Arial';
+    ctx.font = 'bold 24px "Comic Sans MS", Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(fan.direction > 0 ? '→' : '←', 0, fan.radius + 38);
@@ -772,7 +772,7 @@ function drawAimLine() {
         ctx.strokeRect(10, canvas.height - 40, 200, 20);
         
         ctx.fillStyle = '#2C3E50';
-        ctx.font = '14px Arial';
+        ctx.font = '14px "Comic Sans MS", Arial';
         ctx.textAlign = 'left';
         ctx.fillText('Força', 10, canvas.height - 45);
     }
