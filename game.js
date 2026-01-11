@@ -1,48 +1,92 @@
 // Game constants
 const GRAVITY = 0.5;
 const WIND_STRENGTH = 0.3;
-const MAX_THROW_FORCE = 20;
-const MIN_DRAG_DISTANCE = 10;
 const WIND_EFFECT_RADIUS = 150;
 const WIND_VERTICAL_RANGE = 50;
 const TRASH_CAN_COLLISION_MARGIN = 5;
 const TRASH_CAN_ENTRY_TOLERANCE = 20;
 
+// Animation constants
+const FAN_CYCLE_TIME = 10; // seconds
+const HAND_CYCLE_TIME = 4; // seconds
+const THROW_INITIAL_VY = -15; // Initial upward velocity
+const THROW_VX_BASE = 8; // Base horizontal velocity
+
 // Game state
 let canvas, ctx;
 let score = 0;
-let gameState = 'aiming'; // aiming, throwing, reset
+let gameState = 'ready'; // ready, throwing, scoring
 let paperBall = null;
-let aimStart = null;
-let aimCurrent = null;
+let time = 0; // Game time in seconds
+let canShoot = true;
+
+// Animation state
+let trashCanLid = {
+    isOpen: false,
+    openAmount: 0, // 0 to 1
+    shakeOffset: 0,
+    shakeIntensity: 0
+};
 
 // Game objects
 const hand = {
-    x: 150,
-    y: 500,
+    x: 0,
+    y: 0,
     width: 60,
-    height: 80
+    height: 80,
+    cycleTime: HAND_CYCLE_TIME,
+    minX: 100,
+    maxX: 700
 };
 
 const trashCan = {
-    x: 600,
-    y: 450,
+    x: 0,
+    y: 0,
     width: 80,
     height: 100,
-    openingY: 450,
+    openingY: 0,
     openingWidth: 70
 };
 
 const fan = {
-    x: 400,
+    x: 0,
     y: 200,
     radius: 40,
     bladeAngle: 0,
-    rotationSpeed: 0.05,
-    direction: 1, // 1 for right, -1 for left
-    switchTimer: 0,
-    switchInterval: 180 // frames
+    rotationSpeed: 0.1,
+    cycleTime: FAN_CYCLE_TIME,
+    minX: 200,
+    maxX: 600
 };
+
+// Sound generation (Web Audio API)
+let audioContext = null;
+
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playSuccessSound() {
+    if (!audioContext) return;
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+}
 
 // Initialize game
 function init() {
@@ -52,15 +96,9 @@ function init() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     
-    // Mouse events
-    canvas.addEventListener('mousedown', handleStart);
-    canvas.addEventListener('mousemove', handleMove);
-    canvas.addEventListener('mouseup', handleEnd);
-    
-    // Touch events
-    canvas.addEventListener('touchstart', handleStart);
-    canvas.addEventListener('touchmove', handleMove);
-    canvas.addEventListener('touchend', handleEnd);
+    // Single button input
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick);
     
     gameLoop();
 }
@@ -69,102 +107,81 @@ function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    // Adjust game objects positions based on canvas size
-    const scaleX = canvas.width / 800;
-    const scaleY = canvas.height / 600;
+    // Position fan at center top
+    fan.x = canvas.width / 2;
+    fan.y = 150;
     
-    hand.x = 100 * scaleX;
-    hand.y = canvas.height - 100;
-    
-    trashCan.x = canvas.width - 200 * scaleX;
-    trashCan.y = canvas.height - 150;
+    // Position trash can below fan
+    trashCan.x = canvas.width / 2 - trashCan.width / 2;
+    trashCan.y = canvas.height - 180;
     trashCan.openingY = trashCan.y;
     
-    fan.x = canvas.width / 2;
-    fan.y = 150 * scaleY;
+    // Set hand movement range
+    hand.minX = 100;
+    hand.maxX = canvas.width - 150;
+    hand.y = canvas.height - 120;
+    
+    // Set fan movement range
+    fan.minX = 200;
+    fan.maxX = canvas.width - 200;
 }
 
-function handleStart(e) {
+function handleClick(e) {
     e.preventDefault();
-    if (gameState !== 'aiming') return;
     
-    const pos = getInputPosition(e);
-    aimStart = { x: pos.x, y: pos.y };
-    aimCurrent = { x: pos.x, y: pos.y };
-}
-
-function handleMove(e) {
-    e.preventDefault();
-    if (gameState !== 'aiming' || !aimStart) return;
-    
-    const pos = getInputPosition(e);
-    aimCurrent = { x: pos.x, y: pos.y };
-}
-
-function handleEnd(e) {
-    e.preventDefault();
-    if (gameState !== 'aiming' || !aimStart || !aimCurrent) return;
-    
-    // Calculate throw force and direction
-    const dx = aimStart.x - aimCurrent.x;
-    const dy = aimStart.y - aimCurrent.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance > MIN_DRAG_DISTANCE) { // Minimum drag distance
-        const force = Math.min(distance / 20, MAX_THROW_FORCE);
-        const angle = Math.atan2(dy, dx);
-        
-        // Create paper ball
-        paperBall = {
-            x: hand.x + hand.width / 2,
-            y: hand.y,
-            radius: 10,
-            vx: Math.cos(angle) * force,
-            vy: Math.sin(angle) * force,
-            rotation: 0,
-            rotationSpeed: 0.2,
-            crumplePoints: generateCrumplePoints() // Pre-generate crumple effect
-        };
-        
-        gameState = 'throwing';
+    // Initialize audio on first click
+    if (!audioContext) {
+        initAudio();
     }
     
-    aimStart = null;
-    aimCurrent = null;
+    if (gameState === 'ready' && canShoot) {
+        shootBall();
+    }
 }
 
-function getInputPosition(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+function shootBall() {
+    canShoot = false;
+    gameState = 'throwing';
     
-    return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
+    // Create paper ball at hand position
+    paperBall = {
+        x: hand.x + hand.width / 2,
+        y: hand.y,
+        radius: 10,
+        vx: THROW_VX_BASE,
+        vy: THROW_INITIAL_VY,
+        rotation: 0,
+        rotationSpeed: 0.2,
+        crumplePoints: generateCrumplePoints()
     };
 }
 
 function generateCrumplePoints() {
-    // Generate deterministic crumpled paper points
     const points = [];
     const numPoints = 8;
     for (let i = 0; i < numPoints; i++) {
         const angle = (i / numPoints) * Math.PI * 2;
-        const radius = 1 + (Math.sin(i * 2.5) * 0.15); // Deterministic variation
+        const radius = 1 + (Math.sin(i * 2.5) * 0.15);
         points.push({ angle, radius });
     }
     return points;
 }
 
-function update() {
-    // Update fan
-    fan.bladeAngle += fan.rotationSpeed;
-    fan.switchTimer++;
+function update(deltaTime) {
+    time += deltaTime;
     
-    if (fan.switchTimer >= fan.switchInterval) {
-        fan.direction *= -1;
-        fan.switchTimer = 0;
-    }
+    // Update fan position (10 second cycle, left to right)
+    const fanCycleProgress = (time % fan.cycleTime) / fan.cycleTime;
+    fan.x = fan.minX + (fan.maxX - fan.minX) * fanCycleProgress;
+    fan.bladeAngle += fan.rotationSpeed;
+    
+    // Update fan direction based on movement
+    const fanSpeed = (fan.maxX - fan.minX) / fan.cycleTime;
+    fan.direction = 1; // Always moving right in the cycle
+    
+    // Update hand position (4 second cycle, left to right)
+    const handCycleProgress = (time % hand.cycleTime) / hand.cycleTime;
+    hand.x = hand.minX + (hand.maxX - hand.minX) * handCycleProgress;
     
     // Update paper ball
     if (gameState === 'throwing' && paperBall) {
@@ -173,9 +190,12 @@ function update() {
         
         // Apply wind effect from fan
         const distanceToFan = Math.abs(paperBall.y - fan.y);
-        if (distanceToFan < WIND_EFFECT_RADIUS && paperBall.y < fan.y + WIND_VERTICAL_RANGE) {
+        const horizontalDistance = Math.abs(paperBall.x - fan.x);
+        
+        if (distanceToFan < WIND_EFFECT_RADIUS && horizontalDistance < WIND_EFFECT_RADIUS) {
             const windEffect = WIND_STRENGTH * (1 - distanceToFan / WIND_EFFECT_RADIUS);
-            paperBall.vx += fan.direction * windEffect;
+            // Wind blows in the direction the fan is moving
+            paperBall.vx += windEffect;
         }
         
         // Update position
@@ -183,18 +203,38 @@ function update() {
         paperBall.y += paperBall.vy;
         paperBall.rotation += paperBall.rotationSpeed;
         
-        // Check if ball went into trash can
+        // Check if ball hit trash can
         if (checkTrashCanCollision()) {
             score++;
             document.getElementById('score-value').textContent = score;
-            resetGame();
+            startScoringAnimation();
+            paperBall = null;
         }
         
         // Check if ball is out of bounds
-        if (paperBall.y > canvas.height + 50 || 
+        if (paperBall && (paperBall.y > canvas.height + 50 || 
             paperBall.x < -50 || 
-            paperBall.x > canvas.width + 50) {
+            paperBall.x > canvas.width + 50)) {
             resetGame();
+        }
+    }
+    
+    // Update trash can lid animation
+    if (trashCanLid.isOpen) {
+        trashCanLid.openAmount = Math.min(1, trashCanLid.openAmount + 0.1);
+        
+        if (trashCanLid.shakeIntensity > 0) {
+            trashCanLid.shakeOffset = Math.sin(time * 50) * trashCanLid.shakeIntensity;
+            trashCanLid.shakeIntensity *= 0.95;
+        }
+        
+        // Close lid after animation
+        if (trashCanLid.openAmount >= 1 && trashCanLid.shakeIntensity < 0.5) {
+            setTimeout(() => {
+                trashCanLid.isOpen = false;
+                trashCanLid.openAmount = 0;
+                resetGame();
+            }, 500);
         }
     }
 }
@@ -204,13 +244,10 @@ function checkTrashCanCollision() {
     
     const ballBottom = paperBall.y + paperBall.radius;
     const ballTop = paperBall.y - paperBall.radius;
-    const ballLeft = paperBall.x - paperBall.radius;
-    const ballRight = paperBall.x + paperBall.radius;
     
     const canLeft = trashCan.x + TRASH_CAN_COLLISION_MARGIN;
     const canRight = trashCan.x + trashCan.width - TRASH_CAN_COLLISION_MARGIN;
     const canTop = trashCan.openingY;
-    const canBottom = trashCan.y + trashCan.height;
     
     // Check if ball is entering from top and within horizontal bounds
     if (ballBottom >= canTop && ballTop < canTop + TRASH_CAN_ENTRY_TOLERANCE &&
@@ -222,9 +259,18 @@ function checkTrashCanCollision() {
     return false;
 }
 
+function startScoringAnimation() {
+    gameState = 'scoring';
+    trashCanLid.isOpen = true;
+    trashCanLid.openAmount = 0;
+    trashCanLid.shakeIntensity = 5;
+    playSuccessSound();
+}
+
 function resetGame() {
+    gameState = 'ready';
     paperBall = null;
-    gameState = 'aiming';
+    canShoot = true;
 }
 
 function draw() {
@@ -246,11 +292,6 @@ function draw() {
     // Draw paper ball
     if (paperBall) {
         drawPaperBall();
-    }
-    
-    // Draw aim line
-    if (gameState === 'aiming' && aimStart && aimCurrent) {
-        drawAimLine();
     }
 }
 
@@ -451,6 +492,13 @@ function drawHand() {
 }
 
 function drawTrashCan() {
+    ctx.save();
+    
+    // Apply shake effect
+    if (trashCanLid.shakeIntensity > 0) {
+        ctx.translate(trashCanLid.shakeOffset, 0);
+    }
+    
     // Shadow under trash can
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.ellipse(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height + 5, 
@@ -478,25 +526,53 @@ function drawTrashCan() {
     ctx.lineWidth = 2;
     ctx.stroke();
     
-    // Opening (darker)
-    ctx.fillStyle = '#0D1117';
-    ctx.fillRect(trashCan.x + 8, trashCan.y, trashCan.openingWidth - 6, 15);
+    // Animated lid
+    if (trashCanLid.isOpen) {
+        // Open lid tilted
+        const lidTilt = trashCanLid.openAmount * Math.PI / 4;
+        ctx.save();
+        ctx.translate(trashCan.x + trashCan.width - 10, trashCan.y + 5);
+        ctx.rotate(lidTilt);
+        
+        // Lid
+        const rimGradient = ctx.createLinearGradient(0, 0, 0, 12);
+        rimGradient.addColorStop(0, '#4A5F7F');
+        rimGradient.addColorStop(0.5, '#34495E');
+        rimGradient.addColorStop(1, '#2C3E50');
+        ctx.fillStyle = rimGradient;
+        
+        ctx.beginPath();
+        ctx.ellipse(0, 0, trashCan.width / 2 + 5, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = '#1A252F';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.restore();
+    } else {
+        // Closed lid
+        const rimGradient = ctx.createLinearGradient(0, trashCan.y, 0, trashCan.y + 12);
+        rimGradient.addColorStop(0, '#4A5F7F');
+        rimGradient.addColorStop(0.5, '#34495E');
+        rimGradient.addColorStop(1, '#2C3E50');
+        ctx.fillStyle = rimGradient;
+        
+        ctx.beginPath();
+        ctx.ellipse(trashCan.x + trashCan.width / 2, trashCan.y + 5, 
+                    trashCan.width / 2 + 5, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = '#1A252F';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
     
-    // Rim with 3D effect
-    const rimGradient = ctx.createLinearGradient(0, trashCan.y, 0, trashCan.y + 12);
-    rimGradient.addColorStop(0, '#4A5F7F');
-    rimGradient.addColorStop(0.5, '#34495E');
-    rimGradient.addColorStop(1, '#2C3E50');
-    ctx.fillStyle = rimGradient;
-    
-    ctx.beginPath();
-    ctx.ellipse(trashCan.x + trashCan.width / 2, trashCan.y + 5, 
-                trashCan.width / 2 + 5, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.strokeStyle = '#1A252F';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    // Opening (darker when open)
+    if (!trashCanLid.isOpen) {
+        ctx.fillStyle = '#0D1117';
+        ctx.fillRect(trashCan.x + 8, trashCan.y, trashCan.openingWidth - 6, 15);
+    }
     
     // Recycling symbol with better styling
     ctx.strokeStyle = '#27AE60';
@@ -528,6 +604,8 @@ function drawTrashCan() {
     ctx.lineTo(trashCan.x + 8, trashCan.y + trashCan.height - 10);
     ctx.closePath();
     ctx.fill();
+    
+    ctx.restore();
 }
 
 function drawFan() {
@@ -631,26 +709,6 @@ function drawFan() {
     ctx.arc(0, 0, 4, 0, Math.PI * 2);
     ctx.fill();
     
-    // Wind direction indicator with better styling
-    ctx.rotate(-fan.bladeAngle);
-    
-    // Background for indicator
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.beginPath();
-    ctx.arc(0, fan.radius + 38, 18, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.strokeStyle = fan.direction > 0 ? '#3498DB' : '#E74C3C';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // Arrow
-    ctx.fillStyle = fan.direction > 0 ? '#3498DB' : '#E74C3C';
-    ctx.font = 'bold 24px "Comic Sans MS", Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(fan.direction > 0 ? '→' : '←', 0, fan.radius + 38);
-    
     ctx.restore();
 }
 
@@ -726,60 +784,15 @@ function drawPaperBall() {
     ctx.restore();
 }
 
-function drawAimLine() {
-    const dx = aimCurrent.x - aimStart.x;
-    const dy = aimCurrent.y - aimStart.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+let lastTime = 0;
+function gameLoop(currentTime = 0) {
+    const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+    lastTime = currentTime;
     
-    if (distance > MIN_DRAG_DISTANCE) {
-        // Draw arrow from hand
-        ctx.strokeStyle = '#E74C3C';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([5, 5]);
-        
-        ctx.beginPath();
-        ctx.moveTo(aimStart.x, aimStart.y);
-        ctx.lineTo(aimCurrent.x, aimCurrent.y);
-        ctx.stroke();
-        
-        ctx.setLineDash([]);
-        
-        // Draw arrow head
-        const angle = Math.atan2(dy, dx);
-        const headLength = 15;
-        
-        ctx.fillStyle = '#E74C3C';
-        ctx.beginPath();
-        ctx.moveTo(aimCurrent.x, aimCurrent.y);
-        ctx.lineTo(
-            aimCurrent.x - headLength * Math.cos(angle - Math.PI / 6),
-            aimCurrent.y - headLength * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.lineTo(
-            aimCurrent.x - headLength * Math.cos(angle + Math.PI / 6),
-            aimCurrent.y - headLength * Math.sin(angle + Math.PI / 6)
-        );
-        ctx.closePath();
-        ctx.fill();
-        
-        // Power indicator
-        const power = Math.min(distance / 20, MAX_THROW_FORCE);
-        ctx.fillStyle = 'rgba(231, 76, 60, 0.3)';
-        ctx.fillRect(10, canvas.height - 40, (power / MAX_THROW_FORCE) * 200, 20);
-        
-        ctx.strokeStyle = '#E74C3C';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(10, canvas.height - 40, 200, 20);
-        
-        ctx.fillStyle = '#2C3E50';
-        ctx.font = '14px "Comic Sans MS", Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText('Força', 10, canvas.height - 45);
+    if (deltaTime < 0.1) { // Cap delta time to avoid huge jumps
+        update(deltaTime);
     }
-}
-
-function gameLoop() {
-    update();
+    
     draw();
     requestAnimationFrame(gameLoop);
 }
