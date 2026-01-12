@@ -1,7 +1,7 @@
 {
   "appId": "com.paperball.game",
   "appName": "Paper Ball",
-  "webDir": ".",
+  "webDir": "www",
   "server": {
     "androidScheme": "https"
   },

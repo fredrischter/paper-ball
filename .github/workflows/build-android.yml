@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, copilot/build-android-apk ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -30,6 +30,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Build web assets
+      run: npm run build
+      
     - name: Initialize Capacitor Android platform
       run: npm run android:init
       
@@ -40,11 +43,21 @@ jobs:
       run: chmod +x android/gradlew
       
     - name: Build Debug APK
-      run: npm run android:build-debug
+      run: cd android && ./gradlew assembleDebug --no-daemon
       
-    - name: Upload APK artifact
+    - name: Upload Debug APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: paper-ball-debug-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
+        
+    - name: Build Release APK
+      run: cd android && ./gradlew assembleRelease --no-daemon
+      
+    - name: Upload Release APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: paper-ball-release-apk
+        path: android/app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 30

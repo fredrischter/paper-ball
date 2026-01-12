@@ -4,11 +4,12 @@
   "description": "Paper Ball Game - A fun HTML5 canvas game for Android",
   "main": "index.html",
   "scripts": {
-    "android:init": "npx cap add android",
-    "android:sync": "npx cap sync android",
+    "build": "mkdir -p www && cp index.html www/ && cp game.js www/",
+    "android:init": "npm run build && npx cap add android",
+    "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
-    "android:build": "npx cap sync android && cd android && ./gradlew assembleRelease",
-    "android:build-debug": "npx cap sync android && cd android && ./gradlew assembleDebug"
+    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "android:build-debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug"
   },
   "keywords": [
     "game",
