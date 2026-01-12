@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#f1f4f9"/>
+  
+  <!-- Border -->
+  <rect x="10" y="10" width="492" height="492" fill="none" stroke="#c2c8cd" stroke-width="8"/>
+  
+  <!-- Paper Ball -->
+  <circle cx="256" cy="180" r="80" fill="url(#ballGradient)"/>
+  <circle cx="256" cy="180" r="80" fill="none" stroke="#4e86a0" stroke-width="4" opacity="0.7"/>
+  
+  <!-- Fan -->
+  <g transform="translate(380, 350)">
+    <!-- Stand -->
+    <line x1="0" y1="0" x2="0" y2="60" stroke="#888" stroke-width="14" stroke-linecap="round"/>
+    
+    <!-- Body -->
+    <ellipse cx="0" cy="-20" rx="45" ry="40" fill="white" stroke="#aaa" stroke-width="4"/>
+    
+    <!-- Blade 1 -->
+    <path d="M 0,-20 Q 25,-15 30,-20 Q 20,-30 0,-20" fill="#bdf" opacity="0.8"/>
+    <!-- Blade 2 -->
+    <path d="M 0,-20 Q 5,-45 0,-50 Q -10,-30 0,-20" fill="#e8f8fd" opacity="0.8"/>
+    <!-- Blade 3 -->
+    <path d="M 0,-20 Q -25,-15 -30,-20 Q -20,-30 0,-20" fill="#bdf" opacity="0.8"/>
+    <!-- Blade 4 -->
+    <path d="M 0,-20 Q -5,5 0,10 Q 10,-10 0,-20" fill="#e8f8fd" opacity="0.8"/>
+    
+    <!-- Center hub -->
+    <circle cx="0" cy="-20" r="10" fill="#ccc"/>
+    <circle cx="0" cy="-20" r="4" fill="#999"/>
+  </g>
+  
+  <!-- Hand (simplified) -->
+  <g transform="translate(120, 400)">
+    <!-- Palm -->
+    <ellipse cx="30" cy="15" rx="35" ry="25" fill="url(#handGradient)" transform="rotate(-5 30 15)"/>
+    
+    <!-- Fingers -->
+    <ellipse cx="10" cy="-5" rx="12" ry="22" fill="url(#handGradient)" transform="rotate(2 10 -5)"/>
+    <ellipse cx="25" cy="-8" rx="12" ry="22" fill="url(#handGradient)"/>
+    <ellipse cx="40" cy="-6" rx="12" ry="22" fill="url(#handGradient)" transform="rotate(-2 40 -6)"/>
+    <ellipse cx="55" cy="-2" rx="12" ry="22" fill="url(#handGradient)" transform="rotate(-4 55 -2)"/>
+    
+    <!-- Outline -->
+    <ellipse cx="30" cy="15" rx="35" ry="25" fill="none" stroke="#af9165" stroke-width="3" transform="rotate(-5 30 15)"/>
+  </g>
+  
+  <!-- Gradients -->
+  <defs>
+    <radialGradient id="ballGradient">
+      <stop offset="0%" style="stop-color:#fff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#aecfed;stop-opacity:1" />
+    </radialGradient>
+    
+    <linearGradient id="handGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffe4b5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e6c098;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
