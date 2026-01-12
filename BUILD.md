@@ -28,6 +28,11 @@ Before you begin, ensure you have the following installed:
 
 ## Step-by-Step Build Instructions
 
+### Note for Windows Users
+The build scripts use Unix-style commands. If you're on Windows, you may need to:
+- Use Git Bash, WSL, or PowerShell for running the build commands
+- Or manually run: `mkdir www`, `copy index.html www\`, `copy game.js www\` instead of `npm run build`
+
 ### 1. Install Project Dependencies
 
 ```bash
