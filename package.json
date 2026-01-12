@@ -1,0 +1,28 @@
+{
+  "name": "paper-ball",
+  "version": "1.0.0",
+  "description": "Paper Ball Game - A fun HTML5 canvas game for Android",
+  "main": "index.html",
+  "scripts": {
+    "android:init": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:build": "npx cap sync android && cd android && ./gradlew assembleRelease",
+    "android:build-debug": "npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "keywords": [
+    "game",
+    "html5",
+    "canvas",
+    "android"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}
