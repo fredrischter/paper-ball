@@ -1,285 +1,747 @@
-// Responsive Paper Ball Game with Cartoon Hand and Stationary Animated Fan
-// Keep all logic responsive to canvas, hand uses sine oscillation, fan is fixed but animates
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-let width = window.innerWidth;
-let height = window.innerHeight;
+// Game constants
+const GRAVITY = 0.5;
+const WIND_STRENGTH = 0.3;
+const WIND_EFFECT_RADIUS = 150;
+const WIND_VERTICAL_RANGE = 50;
+const TRASH_CAN_COLLISION_MARGIN = 5;
+const TRASH_CAN_ENTRY_TOLERANCE = 20;
 
-// Responsive resize
-function resizeCanvas() {
-  width = window.innerWidth;
-  height = window.innerHeight;
-  canvas.width = width;
-  canvas.height = height;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+// Animation constants
+const HAND_CYCLE_TIME = 4; // seconds
+const THROW_INITIAL_VY = -15; // Initial upward velocity
+
+// Game state
+let canvas, ctx;
+let score = 0;
+let gameState = 'ready'; // ready, throwing, scoring
+let paperBall = null;
+let time = 0; // Game time in seconds
+let canShoot = true;
+
+// Animation state
+let trashCanLid = {
+    isOpen: false,
+    openAmount: 0, // 0 to 1
+    shakeOffset: 0,
+    shakeIntensity: 0
+};
 
 // Game objects
-const gravity = 0.003; // relative gravity per ms
-let lastTimestamp = null;
+const hand = {
+    x: 0,
+    y: 0,
+    width: 60,
+    height: 80,
+    cycleTime: HAND_CYCLE_TIME,
+    minX: 100,
+    maxX: 700
+};
 
-// Hand parameters
-const handRange = 0.3; // fraction of canvas width
-const handYOffset = 0.22; // fraction of canvas height from bottom
-const handWidth = 0.13;
-const handHeight = 0.09;
-let handOscTime = 0; // ms
+const trashCan = {
+    x: 0,
+    y: 0,
+    width: 80,
+    height: 100,
+    openingY: 0,
+    openingWidth: 70
+};
 
-// Fan parameters
-const fanWidth = 0.11;
-const fanHeight = 0.12;
-const fanYOffset = 0.16;
-const fanXPos = 0.75; // Fraction of width (fixed X)
-let fanAngle = 0;
+const fan = {
+    x: 0,
+    y: 200,
+    radius: 40,
+    bladeAngle: 0,
+    rotationSpeed: 0.1,
+    direction: 1 // 1 for right, -1 for left
+};
 
-// Ball parameters
-let ballRadius = 0.033;
-let ball = null;
+// Sound generation (Web Audio API)
+let audioContext = null;
 
-// Fan wind effect
-const windStrength = 0.0017; // px/ms^2 (scales further with fan power and proximity)
-let fanOn = false;
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
 
-// Util
-function lerp(a, b, t) { return a + (b - a) * t; }
-function clamp(val, a, b){ return Math.max(a, Math.min(b, val)); }
+function playSuccessSound() {
+    if (!audioContext) return;
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+}
 
-// Input
-canvas.addEventListener('click', shootBall);
-canvas.addEventListener('touchstart', shootBall);
+// Initialize game
+function init() {
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Single button input
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick);
+    
+    gameLoop();
+}
 
-// Remove any auto-rightward vx, only wind changes vx
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Position fan at fixed position (relative to screen)
+    fan.x = canvas.width * 0.5;
+    fan.y = canvas.height * 0.25;
+    
+    // Position trash can below fan
+    trashCan.x = canvas.width / 2 - trashCan.width / 2;
+    trashCan.y = canvas.height - canvas.height * 0.25;
+    trashCan.openingY = trashCan.y;
+    
+    // Set hand movement range (relative coordinates)
+    hand.minX = canvas.width * 0.15;
+    hand.maxX = canvas.width * 0.85;
+    hand.y = canvas.height - canvas.height * 0.15;
+}
+
+function handleClick(e) {
+    e.preventDefault();
+    
+    // Initialize audio on first click
+    if (!audioContext) {
+        initAudio();
+    }
+    
+    if (gameState === 'ready' && canShoot) {
+        shootBall();
+    }
+}
+
 function shootBall() {
-  if (!ball || ball.launched) return;
-  ball.vx = 0;
-  ball.vy = -0.02 * height; // shot upward
-  ball.launched = true;
+    canShoot = false;
+    gameState = 'throwing';
+    
+    // Create paper ball at hand position
+    paperBall = {
+        x: hand.x + hand.width / 2,
+        y: hand.y,
+        radius: 10,
+        vx: 0, // No initial horizontal velocity
+        vy: THROW_INITIAL_VY,
+        rotation: 0,
+        rotationSpeed: 0.2,
+        crumplePoints: generateCrumplePoints()
+    };
 }
 
-function respawnBall() {
-  // Start above hand
-  const hand = getHandParams();
-  ball = {
-    x: hand.x + hand.w / 2 - ballRadius * width / 2,
-    y: hand.y - ballRadius * height,
-    vx: 0,
-    vy: 0,
-    launched: false
-  };
+function generateCrumplePoints() {
+    const points = [];
+    const numPoints = 8;
+    for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2;
+        const radius = 1 + (Math.sin(i * 2.5) * 0.15);
+        points.push({ angle, radius });
+    }
+    return points;
 }
 
-function getHandParams() {
-  // Sine oscillation in horizontal range
-  const t = handOscTime;
-  const center = width * 0.5;
-  const range = width * handRange * 0.5;
-  const period = 2300; // ms for a full cycle
-  const handX = center + Math.sin((2 * Math.PI * t) / period) * range - width * handWidth / 2;
-  return {
-    x: handX,
-    y: height - height * handYOffset - height * handHeight,
-    w: width * handWidth,
-    h: height * handHeight
-  };
+function update(deltaTime) {
+    time += deltaTime;
+    
+    // Fan stays stationary but blades rotate
+    fan.bladeAngle += fan.rotationSpeed;
+    
+    // Update hand position using sine wave for smooth oscillation
+    const handCycleProgress = (time / hand.cycleTime) * Math.PI * 2;
+    const handRange = hand.maxX - hand.minX;
+    hand.x = hand.minX + (handRange / 2) + Math.sin(handCycleProgress) * (handRange / 2);
+    
+    // Update paper ball
+    if (gameState === 'throwing' && paperBall) {
+        // Apply gravity
+        paperBall.vy += GRAVITY;
+        
+        // Apply wind effect from fan only when ball is vertically in front of fan
+        const verticalDistance = Math.abs(paperBall.y - fan.y);
+        const horizontalDistance = Math.abs(paperBall.x - fan.x);
+        
+        // Wind only affects ball when it's in the vertical range in front of the fan
+        if (verticalDistance < WIND_VERTICAL_RANGE && horizontalDistance < WIND_EFFECT_RADIUS) {
+            const windEffect = WIND_STRENGTH * (1 - horizontalDistance / WIND_EFFECT_RADIUS);
+            // Wind blows left or right based on fan direction
+            paperBall.vx += windEffect * fan.direction;
+        }
+        
+        // Update position
+        paperBall.x += paperBall.vx;
+        paperBall.y += paperBall.vy;
+        paperBall.rotation += paperBall.rotationSpeed;
+        
+        // Check if ball hit trash can
+        if (checkTrashCanCollision()) {
+            score++;
+            document.getElementById('score-value').textContent = score;
+            startScoringAnimation();
+            paperBall = null;
+        }
+        
+        // Check if ball is out of bounds
+        if (paperBall && (paperBall.y > canvas.height + 50 || 
+            paperBall.x < -50 || 
+            paperBall.x > canvas.width + 50)) {
+            resetGame();
+        }
+    }
+    
+    // Update trash can lid animation
+    if (trashCanLid.isOpen) {
+        trashCanLid.openAmount = Math.min(1, trashCanLid.openAmount + 0.1);
+        
+        if (trashCanLid.shakeIntensity > 0) {
+            trashCanLid.shakeOffset = Math.sin(time * 50) * trashCanLid.shakeIntensity;
+            trashCanLid.shakeIntensity *= 0.95;
+        }
+        
+        // Close lid after animation
+        if (trashCanLid.openAmount >= 1 && trashCanLid.shakeIntensity < 0.5) {
+            setTimeout(() => {
+                trashCanLid.isOpen = false;
+                trashCanLid.openAmount = 0;
+                resetGame();
+            }, 500);
+        }
+    }
 }
 
-function getFanParams() {
-  return {
-    x: width * fanXPos - width * fanWidth / 2,
-    y: height * fanYOffset,
-    w: width * fanWidth,
-    h: height * fanHeight
-  };
+function checkTrashCanCollision() {
+    if (!paperBall) return false;
+    
+    const ballBottom = paperBall.y + paperBall.radius;
+    const ballTop = paperBall.y - paperBall.radius;
+    
+    const canLeft = trashCan.x + TRASH_CAN_COLLISION_MARGIN;
+    const canRight = trashCan.x + trashCan.width - TRASH_CAN_COLLISION_MARGIN;
+    const canTop = trashCan.openingY;
+    
+    // Check if ball is entering from top and within horizontal bounds
+    if (ballBottom >= canTop && ballTop < canTop + TRASH_CAN_ENTRY_TOLERANCE &&
+        paperBall.x >= canLeft && paperBall.x <= canRight &&
+        paperBall.vy > 0) {
+        return true;
+    }
+    
+    return false;
 }
 
-function updateBall(dt) {
-  if (!ball.launched) return;
-  // Gravity only up/down
-  ball.vy += gravity * height * dt;
-
-  // Wind if in fan area
-  const fan = getFanParams();
-  const ballInFanZone = 
-    ball.y + ballRadius * height > fan.y &&
-    ball.y < fan.y + fan.h &&
-    ball.x + ballRadius * width > fan.x &&
-    ball.x < fan.x + fan.w;
-  if (fanOn && ballInFanZone) {
-    // Proximity: more wind near fan center
-    const cx = fan.x + fan.w / 2;
-    const dx = (ball.x + ballRadius * width/2) - cx;
-    const wind = lerp(
-      windStrength * width,
-      windStrength * width * 1.35, 
-      1 - Math.abs(dx) / (fan.w/2)
-    );
-    // Wind direction: right if fan blades spinning CCW, left if CW (random but usually right)
-    ball.vx += wind * dt * (fanAngle % (2*Math.PI) < Math.PI ? 1 : -1);
-  }
-
-  ball.x += ball.vx * dt;
-  ball.y += ball.vy * dt;
-
-  // Floor and ceiling bounds
-  if (ball.y + ballRadius * height > height) {
-    ball.y = height - ballRadius * height;
-    ball.vy = 0;
-    ball.vx = 0;
-    ball.launched = false;
-  }
-  // Left/right bounds
-  if (ball.x < 0) ball.x = 0;
-  if (ball.x + ballRadius * width > width) ball.x = width - ballRadius * width;
+function startScoringAnimation() {
+    gameState = 'scoring';
+    trashCanLid.isOpen = true;
+    trashCanLid.openAmount = 0;
+    trashCanLid.shakeIntensity = 5;
+    playSuccessSound();
 }
 
-// Visuals
-function drawCartoonHand(params) {
-  const {x, y, w, h} = params;
-  // Palm
-  ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(x + w*0.58, y + h*0.66, w*0.37, h*0.34, -0.08, 0, Math.PI*2);
-  ctx.fillStyle = ctx.createLinearGradient(x, y, x, y+h);
-  ctx.fillStyle.addColorStop(0, '#ffe4b5');
-  ctx.fillStyle.addColorStop(1, '#e6c098');
-  ctx.fill();
+function resetGame() {
+    gameState = 'ready';
+    paperBall = null;
+    canShoot = true;
+}
 
-  // Shadow
-  ctx.beginPath();
-  ctx.ellipse(x + w*0.64, y + h*0.8, w*0.22, h*0.18, -0.16, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(160,130,60,0.17)';
-  ctx.fill();
+function draw() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw office background
+    drawOffice();
+    
+    // Draw fan
+    drawFan();
+    
+    // Draw trash can
+    drawTrashCan();
+    
+    // Draw hand
+    drawHand();
+    
+    // Draw paper ball
+    if (paperBall) {
+        drawPaperBall();
+    }
+}
 
-  // Fingers
-  for(let i=0;i<4;i++) {
-    let fx = x + w*0.19 + w*0.19*i;
-    let fy = y + h*0.17 - h*0.092*Math.sin(i*0.8+1);
-    ctx.save();
+function drawOffice() {
+    // Sky/Wall gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(0.6, '#B0D4E8');
+    gradient.addColorStop(1, '#D4E8F5');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height - canvas.height * 0.1);
+    
+    // Window with frame (responsive positioning)
+    const windowX = canvas.width * 0.7;
+    const windowY = canvas.height * 0.08;
+    const windowW = canvas.width * 0.18;
+    const windowH = canvas.height * 0.3;
+    
+    // Window frame
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(windowX - 10, windowY - 10, windowW + 20, windowH + 20);
+    ctx.fillStyle = '#6FA8DC';
+    ctx.fillRect(windowX, windowY, windowW, windowH);
+    
+    // Window panes
+    ctx.strokeStyle = '#8B4513';
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.ellipse(fx, fy, w*0.14, h*0.28, 0.04-Math.PI*0.04*i, 0, Math.PI*2);
-    ctx.fillStyle = ctx.createLinearGradient(x, y, x, y+h);
-    ctx.fillStyle.addColorStop(0, '#ffe4b5');
-    ctx.fillStyle.addColorStop(1, '#e6c098');
+    ctx.moveTo(windowX + windowW/2, windowY);
+    ctx.lineTo(windowX + windowW/2, windowY + windowH);
+    ctx.moveTo(windowX, windowY + windowH/2);
+    ctx.lineTo(windowX + windowW, windowY + windowH/2);
+    ctx.stroke();
+    
+    // Clouds outside window
+    drawCloud(windowX + windowW * 0.3, windowY + windowH * 0.3, windowW * 0.13);
+    drawCloud(windowX + windowW * 0.7, windowY + windowH * 0.5, windowW * 0.1);
+    
+    // Desk (clean, minimal)
+    const deskHeight = canvas.height * 0.1;
+    ctx.fillStyle = '#8B6F47';
+    ctx.fillRect(0, canvas.height - deskHeight, canvas.width, deskHeight);
+    
+    // Desk edge highlight
+    ctx.fillStyle = '#A0826D';
+    ctx.fillRect(0, canvas.height - deskHeight, canvas.width, deskHeight * 0.1);
+    
+    // Desk shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, canvas.height - deskHeight * 0.9, canvas.width, deskHeight * 0.06);
+    
+    // Minimal wood texture lines on desk
+    ctx.strokeStyle = 'rgba(101, 67, 33, 0.2)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - deskHeight * 0.8 + i * deskHeight * 0.25);
+        ctx.lineTo(canvas.width, canvas.height - deskHeight * 0.8 + i * deskHeight * 0.25);
+        ctx.stroke();
+    }
+}
+
+function drawCloud(x, y, size) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.8, y - size * 0.3, size * 0.7, 0, Math.PI * 2);
+    ctx.arc(x + size * 1.3, y, size * 0.8, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
-  }
-  // Outline
-  ctx.lineWidth = Math.max(2, w*0.05);
-  ctx.strokeStyle = '#af9165';
-  ctx.globalAlpha = 1;
-  ctx.beginPath();
-  ctx.ellipse(x + w*0.58, y + h*0.66, w*0.37, h*0.34, -0.08, 0, Math.PI*2);
-  for(let i=0;i<4;i++) {
-    let fx = x + w*0.19 + w*0.19*i;
-    let fy = y + h*0.17 - h*0.092*Math.sin(i*0.8+1);
-    ctx.moveTo(fx, fy);
-    ctx.ellipse(fx, fy, w*0.14, h*0.28, 0.04-Math.PI*0.04*i, 0, Math.PI*2);
-  }
-  ctx.stroke();
-  ctx.restore();
 }
 
-function drawAnimatedFan(params, t) {
-  const {x, y, w, h} = params;
-  ctx.save();
-  // Fan stand
-  ctx.beginPath();
-  ctx.moveTo(x + w/2, y + h*0.99);
-  ctx.lineTo(x + w/2, y+h*1.21);
-  ctx.lineWidth = w*0.13;
-  ctx.strokeStyle = '#888';
-  ctx.stroke();
-
-  // Fan body
-  ctx.beginPath();
-  ctx.ellipse(x + w/2, y+h*0.53, w*0.43, h*0.39, 0, 0, Math.PI*2);
-  ctx.fillStyle = 'white';
-  ctx.shadowColor = '#7bf';
-  ctx.shadowBlur = w*0.06;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = '#aaa';
-  ctx.lineWidth = w*0.05;
-  ctx.stroke();
-
-  // Blades animate in place (no X movement!)
-  for (let i = 0; i < 4; i++) {
+function drawHand() {
     ctx.save();
-    ctx.translate(x + w/2, y + h*0.53);
-    ctx.rotate(fanAngle + i * Math.PI/2);
+    ctx.translate(hand.x + hand.width / 2, hand.y + hand.height / 2);
+    
+    // Arm/Wrist
+    ctx.fillStyle = '#FFD1B3';
+    ctx.fillRect(-15, 20, 30, 40);
+    
+    // Wrist shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(-15, 20, 30, 5);
+    
+    // Palm with gradient
+    const palmGradient = ctx.createRadialGradient(0, 10, 5, 0, 10, 30);
+    palmGradient.addColorStop(0, '#FFD1B3');
+    palmGradient.addColorStop(1, '#FFC299');
+    ctx.fillStyle = palmGradient;
     ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.quadraticCurveTo(w*0.24, h*0.10, w*0.29, 0);
-    ctx.quadraticCurveTo(w*0.18, -h*0.10, 0,0);
+    ctx.ellipse(0, 10, 28, 33, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Palm outline
+    ctx.strokeStyle = '#E6A57A';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Fingers with better cartoon style
+    for (let i = 0; i < 4; i++) {
+        const fingerX = -22 + i * 11;
+        
+        // Finger shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(fingerX + 2, -13, 9, 27);
+        
+        // Finger
+        ctx.fillStyle = '#FFD1B3';
+        ctx.fillRect(fingerX, -15, 9, 27);
+        
+        // Finger outline
+        ctx.strokeStyle = '#E6A57A';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(fingerX, -15, 9, 27);
+        
+        // Finger tip
+        ctx.fillStyle = '#FFD1B3';
+        ctx.beginPath();
+        ctx.arc(fingerX + 4.5, -15, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#E6A57A';
+        ctx.stroke();
+        
+        // Knuckle line
+        ctx.strokeStyle = '#E6A57A';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(fingerX, -3);
+        ctx.lineTo(fingerX + 9, -3);
+        ctx.stroke();
+    }
+    
+    // Thumb with improved style
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.beginPath();
+    ctx.arc(-26, 7, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#FFD1B3';
+    ctx.beginPath();
+    ctx.arc(-28, 5, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#E6A57A';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Thumb knuckle
+    ctx.strokeStyle = '#E6A57A';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-32, 10);
+    ctx.lineTo(-24, 10);
+    ctx.stroke();
+    
+    ctx.restore();
+}
+
+function drawTrashCan() {
+    ctx.save();
+    
+    // Apply shake effect
+    if (trashCanLid.shakeIntensity > 0) {
+        ctx.translate(trashCanLid.shakeOffset, 0);
+    }
+    
+    // Shadow under trash can
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.ellipse(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height + 5, 
+                trashCan.width / 2, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Trash can body with gradient
+    const canGradient = ctx.createLinearGradient(trashCan.x, 0, trashCan.x + trashCan.width, 0);
+    canGradient.addColorStop(0, '#2C3E50');
+    canGradient.addColorStop(0.5, '#34495E');
+    canGradient.addColorStop(1, '#2C3E50');
+    ctx.fillStyle = canGradient;
+    
+    // Slightly tapered body
+    ctx.beginPath();
+    ctx.moveTo(trashCan.x + 5, trashCan.y + 10);
+    ctx.lineTo(trashCan.x, trashCan.y + trashCan.height);
+    ctx.lineTo(trashCan.x + trashCan.width, trashCan.y + trashCan.height);
+    ctx.lineTo(trashCan.x + trashCan.width - 5, trashCan.y + 10);
     ctx.closePath();
-    ctx.fillStyle = i%2 == 0 ? '#bdf' : '#e8f8fd';
-    ctx.globalAlpha = 0.73;
     ctx.fill();
-    ctx.globalAlpha = 1;
+    
+    // Body outline
+    ctx.strokeStyle = '#1A252F';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Animated lid
+    if (trashCanLid.isOpen) {
+        // Open lid tilted
+        const lidTilt = trashCanLid.openAmount * Math.PI / 4;
+        ctx.save();
+        ctx.translate(trashCan.x + trashCan.width - 10, trashCan.y + 5);
+        ctx.rotate(lidTilt);
+        
+        // Lid
+        const rimGradient = ctx.createLinearGradient(0, 0, 0, 12);
+        rimGradient.addColorStop(0, '#4A5F7F');
+        rimGradient.addColorStop(0.5, '#34495E');
+        rimGradient.addColorStop(1, '#2C3E50');
+        ctx.fillStyle = rimGradient;
+        
+        ctx.beginPath();
+        ctx.ellipse(0, 0, trashCan.width / 2 + 5, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = '#1A252F';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.restore();
+    } else {
+        // Closed lid
+        const rimGradient = ctx.createLinearGradient(0, trashCan.y, 0, trashCan.y + 12);
+        rimGradient.addColorStop(0, '#4A5F7F');
+        rimGradient.addColorStop(0.5, '#34495E');
+        rimGradient.addColorStop(1, '#2C3E50');
+        ctx.fillStyle = rimGradient;
+        
+        ctx.beginPath();
+        ctx.ellipse(trashCan.x + trashCan.width / 2, trashCan.y + 5, 
+                    trashCan.width / 2 + 5, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = '#1A252F';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    
+    // Opening (darker when open)
+    if (!trashCanLid.isOpen) {
+        ctx.fillStyle = '#0D1117';
+        ctx.fillRect(trashCan.x + 8, trashCan.y, trashCan.openingWidth - 6, 15);
+    }
+    
+    // Recycling symbol with better styling
+    ctx.strokeStyle = '#27AE60';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2 + 5, 22, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Inner circle
+    ctx.strokeStyle = '#2ECC71';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2 + 5, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Recycling arrows (♻)
+    ctx.font = 'bold 28px "Comic Sans MS", Arial';
+    ctx.fillStyle = '#27AE60';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('♻', trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2 + 5);
+    
+    // Shine effect on can
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.beginPath();
+    ctx.moveTo(trashCan.x + 10, trashCan.y + 20);
+    ctx.lineTo(trashCan.x + 20, trashCan.y + 20);
+    ctx.lineTo(trashCan.x + 18, trashCan.y + trashCan.height - 10);
+    ctx.lineTo(trashCan.x + 8, trashCan.y + trashCan.height - 10);
+    ctx.closePath();
+    ctx.fill();
+    
     ctx.restore();
-  }
-
-  // Center hub
-  ctx.beginPath();
-  ctx.arc(x + w/2, y + h*0.53, w*0.11, 0, 2*Math.PI);
-  ctx.fillStyle = '#ccc';
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x + w/2, y + h*0.53, w*0.05, 0, 2*Math.PI);
-  ctx.fillStyle = '#999';
-  ctx.fill();
-  ctx.restore();
 }
 
-function drawBall() {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(ball.x + ballRadius * width/2, ball.y + ballRadius * height/2, ballRadius * width/2, 0, 2 * Math.PI);
-  ctx.fillStyle = ctx.createRadialGradient(
-    ball.x + ballRadius * width/2, ball.y + ballRadius * height/2, ballRadius * width/12,
-    ball.x + ballRadius * width/2, ball.y + ballRadius * height/2, ballRadius * width/2
-  );
-  ctx.fillStyle.addColorStop(0, '#fff');
-  ctx.fillStyle.addColorStop(1, '#aecfed');
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = '#4e86a0';
-  ctx.globalAlpha = 0.7;
-  ctx.stroke();
-  ctx.restore();
+function drawFan() {
+    ctx.save();
+    ctx.translate(fan.x, fan.y);
+    
+    // Fan base/stand with gradient
+    const baseGradient = ctx.createLinearGradient(-12, 0, 12, 0);
+    baseGradient.addColorStop(0, '#7F8C8D');
+    baseGradient.addColorStop(0.5, '#95A5A6');
+    baseGradient.addColorStop(1, '#7F8C8D');
+    ctx.fillStyle = baseGradient;
+    ctx.fillRect(-12, 0, 24, 65);
+    
+    // Base outline
+    ctx.strokeStyle = '#5D6D6E';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-12, 0, 24, 65);
+    
+    // Base bottom (foot)
+    ctx.fillStyle = '#5D6D6E';
+    ctx.fillRect(-18, 60, 36, 8);
+    ctx.strokeStyle = '#34495E';
+    ctx.strokeRect(-18, 60, 36, 8);
+    
+    // Fan cage/guard (outer circle)
+    ctx.strokeStyle = '#7F8C8D';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, fan.radius + 5, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Fan circle background
+    const fanGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, fan.radius);
+    fanGradient.addColorStop(0, '#E8E8E8');
+    fanGradient.addColorStop(0.7, '#BDC3C7');
+    fanGradient.addColorStop(1, '#95A5A6');
+    ctx.fillStyle = fanGradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, fan.radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#7F8C8D';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Fan blades with rotation
+    ctx.rotate(fan.bladeAngle);
+    
+    for (let i = 0; i < 3; i++) {
+        ctx.save();
+        ctx.rotate((i * Math.PI * 2) / 3);
+        
+        // Blade shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.beginPath();
+        ctx.ellipse(2, -fan.radius / 2, 10, fan.radius / 2 + 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Blade with gradient
+        const bladeGradient = ctx.createLinearGradient(-8, 0, 8, 0);
+        bladeGradient.addColorStop(0, '#2C3E50');
+        bladeGradient.addColorStop(0.5, '#34495E');
+        bladeGradient.addColorStop(1, '#2C3E50');
+        ctx.fillStyle = bladeGradient;
+        ctx.beginPath();
+        ctx.ellipse(0, -fan.radius / 2, 10, fan.radius / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Blade outline
+        ctx.strokeStyle = '#1A252F';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        // Blade highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.ellipse(-3, -fan.radius / 2, 4, fan.radius / 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    // Center cap/motor with 3D effect
+    const capGradient = ctx.createRadialGradient(-3, -3, 2, 0, 0, 12);
+    capGradient.addColorStop(0, '#34495E');
+    capGradient.addColorStop(0.7, '#2C3E50');
+    capGradient.addColorStop(1, '#1A252F');
+    ctx.fillStyle = capGradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#1A252F';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Center screw detail
+    ctx.fillStyle = '#95A5A6';
+    ctx.beginPath();
+    ctx.arc(0, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
 }
 
-function clearBG() {
-  // Simple paper border
-  ctx.fillStyle = '#f1f4f9';
-  ctx.fillRect(0, 0, width, height);
-  ctx.strokeStyle = '#c2c8cd';
-  ctx.lineWidth = Math.max(3, width * 0.008);
-  ctx.strokeRect(width*0.02, height*0.02, width*0.96, height*0.96);
+function drawPaperBall() {
+    ctx.save();
+    ctx.translate(paperBall.x, paperBall.y);
+    ctx.rotate(paperBall.rotation);
+    
+    // Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.beginPath();
+    ctx.arc(2, 2, paperBall.radius + 1, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Paper ball with gradient for 3D effect
+    const ballGradient = ctx.createRadialGradient(-3, -3, 2, 0, 0, paperBall.radius);
+    ballGradient.addColorStop(0, '#FFFFFF');
+    ballGradient.addColorStop(0.5, '#F5F5F5');
+    ballGradient.addColorStop(1, '#D3D3D3');
+    ctx.fillStyle = ballGradient;
+    
+    // Crumpled paper effect using pre-generated points
+    ctx.beginPath();
+    for (let i = 0; i < paperBall.crumplePoints.length; i++) {
+        const point = paperBall.crumplePoints[i];
+        const x = Math.cos(point.angle) * paperBall.radius * point.radius;
+        const y = Math.sin(point.angle) * paperBall.radius * point.radius;
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    ctx.closePath();
+    ctx.fill();
+    
+    // Crumple outline
+    ctx.strokeStyle = '#A9A9A9';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Crumple details (wrinkles)
+    ctx.strokeStyle = '#C0C0C0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(
+            Math.cos(angle) * paperBall.radius * 0.6,
+            Math.sin(angle) * paperBall.radius * 0.6
+        );
+        ctx.stroke();
+    }
+    
+    // Paper lines for texture
+    ctx.strokeStyle = '#B0B0B0';
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-paperBall.radius / 2, -paperBall.radius / 2 + i * 5);
+        ctx.lineTo(paperBall.radius / 2, -paperBall.radius / 2 + i * 5);
+        ctx.stroke();
+    }
+    
+    // Highlight for 3D effect
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.beginPath();
+    ctx.arc(-paperBall.radius / 3, -paperBall.radius / 3, paperBall.radius / 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
 }
 
-function drawScene(t) {
-  clearBG();
-  const hand = getHandParams();
-  drawCartoonHand(hand);
-  drawAnimatedFan(getFanParams(), t);
-  if (ball) drawBall();
-  // Omit all clutter/other desk items!
+let lastTime = 0;
+function gameLoop(currentTime = 0) {
+    const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+    lastTime = currentTime;
+    
+    if (deltaTime < 0.1) { // Cap delta time to avoid huge jumps
+        update(deltaTime);
+    }
+    
+    draw();
+    requestAnimationFrame(gameLoop);
 }
 
-function loop(ts) {
-  if (!lastTimestamp) lastTimestamp = ts;
-  let dt = Math.min(ts - lastTimestamp, 45);
-  handOscTime += dt;
-  fanAngle += (fanOn ? 0.0038 : 0.0013)*dt;
-  fanOn = true; // Fan always on
-  updateBall(dt);
-  drawScene(ts);
-  lastTimestamp = ts;
-  requestAnimationFrame(loop);
-}
-
-// Initialize
-respawnBall();
-requestAnimationFrame(loop);
+// Start game when page loads
+window.addEventListener('load', init);
