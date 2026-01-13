@@ -5,6 +5,9 @@ function preload() {
     // Create simple spritesheets procedurally since we don't have actual assets
     createPlayerSpritesheet(this);
     createUISprites(this);
+    createStageBackgrounds(this);
+    createPopupSprites(this);
+    createInterstitialImage(this);
     
     // Note: In a real implementation, you would load actual sprite files:
     // this.load.spritesheet('player', 'assets/spritesheets/player.png', {
@@ -164,4 +167,111 @@ function createUISprites(scene) {
         frameWidth: buttonSize,
         frameHeight: buttonSize
     });
+}
+
+function createStageBackgrounds(scene) {
+    // Create background images for each stage
+    const backgrounds = [
+        { key: 'bg-stage1', color1: '#2d5a3d', color2: '#1a3d2d' },
+        { key: 'bg-stage2', color1: '#5a3d2d', color2: '#3d2d1a' },
+        { key: 'bg-stage3', color1: '#3d2d5a', color2: '#2d1a3d' }
+    ];
+    
+    backgrounds.forEach(bg => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+        gradient.addColorStop(0, bg.color1);
+        gradient.addColorStop(1, bg.color2);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 800, 600);
+        
+        // Add some decorative elements
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        for (let i = 0; i < 20; i++) {
+            const x = Math.random() * 800;
+            const y = Math.random() * 500;
+            const size = Math.random() * 30 + 10;
+            ctx.fillRect(x, y, size, size);
+        }
+        
+        scene.textures.addCanvas(bg.key, canvas);
+    });
+}
+
+function createPopupSprites(scene) {
+    // Create popup background
+    const canvas = document.createElement('canvas');
+    canvas.width = 500;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    
+    // Background with border
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(0, 0, 500, 300);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, 496, 296);
+    
+    // Inner decoration
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(10, 10, 480, 280);
+    
+    scene.textures.addCanvas('popup-bg', canvas);
+    
+    // Create button sprites (OK and Cancel)
+    const buttonCanvas = document.createElement('canvas');
+    buttonCanvas.width = 200;
+    buttonCanvas.height = 50;
+    const btnCtx = buttonCanvas.getContext('2d');
+    
+    // OK button (green)
+    btnCtx.fillStyle = '#4CAF50';
+    btnCtx.fillRect(0, 0, 90, 50);
+    btnCtx.strokeStyle = '#fff';
+    btnCtx.lineWidth = 2;
+    btnCtx.strokeRect(1, 1, 88, 48);
+    
+    // Cancel button (red)
+    btnCtx.fillStyle = '#f44336';
+    btnCtx.fillRect(110, 0, 90, 50);
+    btnCtx.strokeStyle = '#fff';
+    btnCtx.lineWidth = 2;
+    btnCtx.strokeRect(111, 1, 88, 48);
+    
+    scene.textures.addSpriteSheet('popup-buttons', buttonCanvas, {
+        frameWidth: 90,
+        frameHeight: 50
+    });
+}
+
+function createInterstitialImage(scene) {
+    // Create full-screen interstitial image
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    
+    // Create a radial gradient
+    const gradient = ctx.createRadialGradient(400, 300, 50, 400, 300, 400);
+    gradient.addColorStop(0, '#FFD700');
+    gradient.addColorStop(0.5, '#FFA500');
+    gradient.addColorStop(1, '#FF6347');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 800, 600);
+    
+    // Add "Loading..." or transition text
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Stage Transition', 400, 280);
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText('Loading...', 400, 340);
+    
+    scene.textures.addCanvas('interstitial', canvas);
 }

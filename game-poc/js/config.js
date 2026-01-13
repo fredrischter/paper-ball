@@ -51,3 +51,11 @@ let moveDown = false;
 // Animation state
 let currentDirection = 'down'; // down, up, left, right
 let isJumping = false;
+
+// Stage management
+let currentStage = 1; // 1, 2, or 3
+let stageBackgrounds = {}; // Will hold background images
+
+// Popup state
+let popupOverlay = null;
+let popupActive = false;

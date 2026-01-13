@@ -51,6 +51,14 @@ let moveDown = false;
 // Animation state
 let currentDirection = 'down'; // down, up, left, right
 let isJumping = false;
+
+// Stage management
+let currentStage = 1; // 1, 2, or 3
+let stageBackgrounds = {}; // Will hold background images
+
+// Popup state
+let popupOverlay = null;
+let popupActive = false;
 function preload() {
     // Detect if mobile
     isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -58,6 +66,9 @@ function preload() {
     // Create simple spritesheets procedurally since we don't have actual assets
     createPlayerSpritesheet(this);
     createUISprites(this);
+    createStageBackgrounds(this);
+    createPopupSprites(this);
+    createInterstitialImage(this);
     
     // Note: In a real implementation, you would load actual sprite files:
     // this.load.spritesheet('player', 'assets/spritesheets/player.png', {
@@ -218,9 +229,118 @@ function createUISprites(scene) {
         frameHeight: buttonSize
     });
 }
+
+function createStageBackgrounds(scene) {
+    // Create background images for each stage
+    const backgrounds = [
+        { key: 'bg-stage1', color1: '#2d5a3d', color2: '#1a3d2d' },
+        { key: 'bg-stage2', color1: '#5a3d2d', color2: '#3d2d1a' },
+        { key: 'bg-stage3', color1: '#3d2d5a', color2: '#2d1a3d' }
+    ];
+    
+    backgrounds.forEach(bg => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+        gradient.addColorStop(0, bg.color1);
+        gradient.addColorStop(1, bg.color2);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 800, 600);
+        
+        // Add some decorative elements
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        for (let i = 0; i < 20; i++) {
+            const x = Math.random() * 800;
+            const y = Math.random() * 500;
+            const size = Math.random() * 30 + 10;
+            ctx.fillRect(x, y, size, size);
+        }
+        
+        scene.textures.addCanvas(bg.key, canvas);
+    });
+}
+
+function createPopupSprites(scene) {
+    // Create popup background
+    const canvas = document.createElement('canvas');
+    canvas.width = 500;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    
+    // Background with border
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(0, 0, 500, 300);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, 496, 296);
+    
+    // Inner decoration
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(10, 10, 480, 280);
+    
+    scene.textures.addCanvas('popup-bg', canvas);
+    
+    // Create button sprites (OK and Cancel)
+    const buttonCanvas = document.createElement('canvas');
+    buttonCanvas.width = 200;
+    buttonCanvas.height = 50;
+    const btnCtx = buttonCanvas.getContext('2d');
+    
+    // OK button (green)
+    btnCtx.fillStyle = '#4CAF50';
+    btnCtx.fillRect(0, 0, 90, 50);
+    btnCtx.strokeStyle = '#fff';
+    btnCtx.lineWidth = 2;
+    btnCtx.strokeRect(1, 1, 88, 48);
+    
+    // Cancel button (red)
+    btnCtx.fillStyle = '#f44336';
+    btnCtx.fillRect(110, 0, 90, 50);
+    btnCtx.strokeStyle = '#fff';
+    btnCtx.lineWidth = 2;
+    btnCtx.strokeRect(111, 1, 88, 48);
+    
+    scene.textures.addSpriteSheet('popup-buttons', buttonCanvas, {
+        frameWidth: 90,
+        frameHeight: 50
+    });
+}
+
+function createInterstitialImage(scene) {
+    // Create full-screen interstitial image
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    
+    // Create a radial gradient
+    const gradient = ctx.createRadialGradient(400, 300, 50, 400, 300, 400);
+    gradient.addColorStop(0, '#FFD700');
+    gradient.addColorStop(0.5, '#FFA500');
+    gradient.addColorStop(1, '#FF6347');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 800, 600);
+    
+    // Add "Loading..." or transition text
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Stage Transition', 400, 280);
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText('Loading...', 400, 340);
+    
+    scene.textures.addCanvas('interstitial', canvas);
+}
 function create() {
-    // Set background color
-    this.cameras.main.setBackgroundColor('#2d5a3d');
+    // Add stage background
+    stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
+    stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
+    stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
     
     // Create platforms (simple ground)
     platforms = this.physics.add.staticGroup();
@@ -237,7 +357,7 @@ function create() {
     // Create player sprite
     player = this.physics.add.sprite(400, 450, 'player', 0);
     player.setBounce(0.1);
-    player.setCollideWorldBounds(true);
+    player.setCollideWorldBounds(false); // Changed to false to detect edge exits
     
     // Create animations
     createAnimations(this);
@@ -469,8 +589,154 @@ function updateSoundButton() {
         soundButton.setAlpha(soundEnabled ? 1.0 : 0.5);
     }
 }
+
+function showPopup(scene) {
+    if (popupActive) return;
+    
+    popupActive = true;
+    
+    // Create semi-transparent overlay
+    const overlay = scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setDepth(1000);
+    
+    // Create popup background
+    const popupBg = scene.add.image(400, 300, 'popup-bg').setDepth(1001);
+    
+    // Add text
+    const titleText = scene.add.text(400, 200, 'Demonstration Pop-up', {
+        fontSize: '32px',
+        fill: '#fff',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1002);
+    
+    const messageText = scene.add.text(400, 260, 'You went off the left edge!', {
+        fontSize: '20px',
+        fill: '#ccc'
+    }).setOrigin(0.5).setDepth(1002);
+    
+    // Create OK button
+    const okButton = scene.add.sprite(300, 360, 'popup-buttons', 0)
+        .setInteractive()
+        .setDepth(1002)
+        .setScale(1.5);
+    
+    const okText = scene.add.text(300, 360, 'OK', {
+        fontSize: '20px',
+        fill: '#fff',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
+    
+    // Create Cancel button
+    const cancelButton = scene.add.sprite(500, 360, 'popup-buttons', 1)
+        .setInteractive()
+        .setDepth(1002)
+        .setScale(1.5);
+    
+    const cancelText = scene.add.text(500, 360, 'Cancel', {
+        fontSize: '20px',
+        fill: '#fff',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
+    
+    // Store popup elements
+    popupOverlay = {
+        overlay,
+        popupBg,
+        titleText,
+        messageText,
+        okButton,
+        okText,
+        cancelButton,
+        cancelText
+    };
+    
+    // Close popup function
+    const closePopup = () => {
+        if (!popupActive) return;
+        
+        // Destroy all popup elements
+        overlay.destroy();
+        popupBg.destroy();
+        titleText.destroy();
+        messageText.destroy();
+        okButton.destroy();
+        okText.destroy();
+        cancelButton.destroy();
+        cancelText.destroy();
+        
+        popupOverlay = null;
+        popupActive = false;
+        
+        // Reset game to beginning
+        resetGame(scene);
+    };
+    
+    // Button event handlers
+    okButton.on('pointerdown', closePopup);
+    okButton.on('pointerover', () => okButton.setTint(0xcccccc));
+    okButton.on('pointerout', () => okButton.clearTint());
+    
+    cancelButton.on('pointerdown', closePopup);
+    cancelButton.on('pointerover', () => cancelButton.setTint(0xcccccc));
+    cancelButton.on('pointerout', () => cancelButton.clearTint());
+}
+
+function resetGame(scene) {
+    // Reset to stage 1
+    currentStage = 1;
+    stageBackgrounds.bg1.setVisible(true);
+    stageBackgrounds.bg2.setVisible(false);
+    stageBackgrounds.bg3.setVisible(false);
+    
+    // Reset player position
+    player.setPosition(100, 450);
+    player.setVelocity(0, 0);
+}
+
+function switchToStage(scene, stageNumber) {
+    currentStage = stageNumber;
+    
+    if (stageNumber === 2) {
+        // Switch to stage 2
+        stageBackgrounds.bg1.setVisible(false);
+        stageBackgrounds.bg2.setVisible(true);
+        stageBackgrounds.bg3.setVisible(false);
+        
+        // Position player at left side
+        player.setPosition(50, 450);
+        player.setVelocity(0, 0);
+    } else if (stageNumber === 3) {
+        // Show interstitial
+        showInterstitial(scene);
+    }
+}
+
+function showInterstitial(scene) {
+    // Create full-screen interstitial
+    const interstitial = scene.add.image(400, 300, 'interstitial').setDepth(2000);
+    
+    // After 3 seconds, remove interstitial and go back to stage 1
+    scene.time.delayedCall(3000, () => {
+        interstitial.destroy();
+        resetGame(scene);
+    });
+}
 function update() {
-    if (!player) return;
+    if (!player || popupActive) return;
+    
+    // Check for edge exits
+    if (player.x < -20) {
+        // Player exited left - show popup
+        showPopup(this);
+        return;
+    } else if (player.x > 820) {
+        // Player exited right - switch stage
+        if (currentStage === 1) {
+            switchToStage(this, 2);
+        } else if (currentStage === 2) {
+            switchToStage(this, 3);
+        }
+        return;
+    }
     
     // Get input from keyboard or mobile controls
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;

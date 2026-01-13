@@ -1,6 +1,8 @@
 function create() {
-    // Set background color
-    this.cameras.main.setBackgroundColor('#2d5a3d');
+    // Add stage background
+    stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
+    stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
+    stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
     
     // Create platforms (simple ground)
     platforms = this.physics.add.staticGroup();
@@ -17,7 +19,7 @@ function create() {
     // Create player sprite
     player = this.physics.add.sprite(400, 450, 'player', 0);
     player.setBounce(0.1);
-    player.setCollideWorldBounds(true);
+    player.setCollideWorldBounds(false); // Changed to false to detect edge exits
     
     // Create animations
     createAnimations(this);
@@ -248,4 +250,135 @@ function updateSoundButton() {
     if (soundButton) {
         soundButton.setAlpha(soundEnabled ? 1.0 : 0.5);
     }
+}
+
+function showPopup(scene) {
+    if (popupActive) return;
+    
+    popupActive = true;
+    
+    // Create semi-transparent overlay
+    const overlay = scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setDepth(1000);
+    
+    // Create popup background
+    const popupBg = scene.add.image(400, 300, 'popup-bg').setDepth(1001);
+    
+    // Add text
+    const titleText = scene.add.text(400, 200, 'Demonstration Pop-up', {
+        fontSize: '32px',
+        fill: '#fff',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1002);
+    
+    const messageText = scene.add.text(400, 260, 'You went off the left edge!', {
+        fontSize: '20px',
+        fill: '#ccc'
+    }).setOrigin(0.5).setDepth(1002);
+    
+    // Create OK button
+    const okButton = scene.add.sprite(300, 360, 'popup-buttons', 0)
+        .setInteractive()
+        .setDepth(1002)
+        .setScale(1.5);
+    
+    const okText = scene.add.text(300, 360, 'OK', {
+        fontSize: '20px',
+        fill: '#fff',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
+    
+    // Create Cancel button
+    const cancelButton = scene.add.sprite(500, 360, 'popup-buttons', 1)
+        .setInteractive()
+        .setDepth(1002)
+        .setScale(1.5);
+    
+    const cancelText = scene.add.text(500, 360, 'Cancel', {
+        fontSize: '20px',
+        fill: '#fff',
+        fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
+    
+    // Store popup elements
+    popupOverlay = {
+        overlay,
+        popupBg,
+        titleText,
+        messageText,
+        okButton,
+        okText,
+        cancelButton,
+        cancelText
+    };
+    
+    // Close popup function
+    const closePopup = () => {
+        if (!popupActive) return;
+        
+        // Destroy all popup elements
+        overlay.destroy();
+        popupBg.destroy();
+        titleText.destroy();
+        messageText.destroy();
+        okButton.destroy();
+        okText.destroy();
+        cancelButton.destroy();
+        cancelText.destroy();
+        
+        popupOverlay = null;
+        popupActive = false;
+        
+        // Reset game to beginning
+        resetGame(scene);
+    };
+    
+    // Button event handlers
+    okButton.on('pointerdown', closePopup);
+    okButton.on('pointerover', () => okButton.setTint(0xcccccc));
+    okButton.on('pointerout', () => okButton.clearTint());
+    
+    cancelButton.on('pointerdown', closePopup);
+    cancelButton.on('pointerover', () => cancelButton.setTint(0xcccccc));
+    cancelButton.on('pointerout', () => cancelButton.clearTint());
+}
+
+function resetGame(scene) {
+    // Reset to stage 1
+    currentStage = 1;
+    stageBackgrounds.bg1.setVisible(true);
+    stageBackgrounds.bg2.setVisible(false);
+    stageBackgrounds.bg3.setVisible(false);
+    
+    // Reset player position
+    player.setPosition(100, 450);
+    player.setVelocity(0, 0);
+}
+
+function switchToStage(scene, stageNumber) {
+    currentStage = stageNumber;
+    
+    if (stageNumber === 2) {
+        // Switch to stage 2
+        stageBackgrounds.bg1.setVisible(false);
+        stageBackgrounds.bg2.setVisible(true);
+        stageBackgrounds.bg3.setVisible(false);
+        
+        // Position player at left side
+        player.setPosition(50, 450);
+        player.setVelocity(0, 0);
+    } else if (stageNumber === 3) {
+        // Show interstitial
+        showInterstitial(scene);
+    }
+}
+
+function showInterstitial(scene) {
+    // Create full-screen interstitial
+    const interstitial = scene.add.image(400, 300, 'interstitial').setDepth(2000);
+    
+    // After 3 seconds, remove interstitial and go back to stage 1
+    scene.time.delayedCall(3000, () => {
+        interstitial.destroy();
+        resetGame(scene);
+    });
 }

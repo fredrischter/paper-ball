@@ -1,5 +1,20 @@
 function update() {
-    if (!player) return;
+    if (!player || popupActive) return;
+    
+    // Check for edge exits
+    if (player.x < -20) {
+        // Player exited left - show popup
+        showPopup(this);
+        return;
+    } else if (player.x > 820) {
+        // Player exited right - switch stage
+        if (currentStage === 1) {
+            switchToStage(this, 2);
+        } else if (currentStage === 2) {
+            switchToStage(this, 3);
+        }
+        return;
+    }
     
     // Get input from keyboard or mobile controls
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
