@@ -21,56 +21,44 @@ function update() {
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
     const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
     const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
-    const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton);
     
-    // Horizontal movement
+    // Movement speed
+    const speed = 3;
+    
+    // Apply forces for movement (top-down style with no gravity)
     if (leftPressed) {
-        player.setVelocityX(-160);
+        player.setVelocityX(-speed);
         currentDirection = 'left';
     } else if (rightPressed) {
-        player.setVelocityX(160);
+        player.setVelocityX(speed);
         currentDirection = 'right';
     } else {
-        player.setVelocityX(0);
+        player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
     }
     
-    // Vertical movement (for top-down style, though we have gravity)
-    // In a pure top-down game, you'd use setVelocityY instead of jump
-    if (upPressed && player.body.touching.down) {
+    if (upPressed) {
+        player.setVelocityY(-speed);
         currentDirection = 'up';
-    } else if (downPressed && player.body.touching.down) {
+    } else if (downPressed) {
+        player.setVelocityY(speed);
         currentDirection = 'down';
-    }
-    
-    // Jump
-    if (jumpPressed && player.body.touching.down) {
-        player.setVelocityY(-400);
-        isJumping = true;
+    } else {
+        player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
     }
     
     // Update animations
     updatePlayerAnimation();
-    
-    // Reset jumping state when landing
-    if (player.body.touching.down && isJumping) {
-        isJumping = false;
-    }
 }
 
 function updatePlayerAnimation() {
     if (!player.body) return;
     
-    // Jumping animations
-    if (!player.body.touching.down) {
-        const jumpAnim = `jump-${currentDirection}`;
-        if (player.anims.currentAnim?.key !== jumpAnim) {
-            player.anims.play(jumpAnim, true);
-        }
-        return;
-    }
+    const velocityX = Math.abs(player.body.velocity.x);
+    const velocityY = Math.abs(player.body.velocity.y);
+    const isMoving = velocityX > 0.5 || velocityY > 0.5;
     
     // Walking animations
-    if (player.body.velocity.x !== 0) {
+    if (isMoving) {
         const walkAnim = `walk-${currentDirection}`;
         if (player.anims.currentAnim?.key !== walkAnim) {
             player.anims.play(walkAnim, true);

@@ -8,6 +8,7 @@ function preload() {
     createStageBackgrounds(this);
     createPopupSprites(this);
     createInterstitialImage(this);
+    createSquareDollSprite(this);
     
     // Note: In a real implementation, you would load actual sprite files:
     // this.load.spritesheet('player', 'assets/spritesheets/player.png', {
@@ -274,4 +275,34 @@ function createInterstitialImage(scene) {
     ctx.fillText('Loading...', 400, 340);
     
     scene.textures.addCanvas('interstitial', canvas);
+}
+
+function createSquareDollSprite(scene) {
+    // Create a square doll sprite (50x50)
+    const canvas = document.createElement('canvas');
+    canvas.width = 50;
+    canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw square body with gradient
+    const gradient = ctx.createLinearGradient(0, 0, 50, 50);
+    gradient.addColorStop(0, '#FF6B6B');
+    gradient.addColorStop(1, '#C92A2A');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(5, 5, 40, 40);
+    
+    // Add border
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(5, 5, 40, 40);
+    
+    // Add simple face/details
+    ctx.fillStyle = '#000';
+    // Eyes
+    ctx.fillRect(15, 15, 5, 5);
+    ctx.fillRect(30, 15, 5, 5);
+    // Mouth
+    ctx.fillRect(15, 30, 20, 3);
+    
+    scene.textures.addCanvas('square-doll', canvas);
 }

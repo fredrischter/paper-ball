@@ -11,9 +11,9 @@ const gameConfig = {
         height: 600
     },
     physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 300 },
+        default: 'matter',
+        matter: {
+            gravity: { y: 0 }, // No gravity as requested
             debug: false
         }
     },
@@ -31,6 +31,9 @@ let jumpButton;
 let wasdKeys; // WASD keys
 let platforms;
 let isMobile;
+
+// Physics dolls (squares)
+let squareDolls = [];
 
 // UI buttons
 let menuButton;
@@ -69,6 +72,7 @@ function preload() {
     createStageBackgrounds(this);
     createPopupSprites(this);
     createInterstitialImage(this);
+    createSquareDollSprite(this);
     
     // Note: In a real implementation, you would load actual sprite files:
     // this.load.spritesheet('player', 'assets/spritesheets/player.png', {
@@ -336,31 +340,56 @@ function createInterstitialImage(scene) {
     
     scene.textures.addCanvas('interstitial', canvas);
 }
+
+function createSquareDollSprite(scene) {
+    // Create a square doll sprite (50x50)
+    const canvas = document.createElement('canvas');
+    canvas.width = 50;
+    canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw square body with gradient
+    const gradient = ctx.createLinearGradient(0, 0, 50, 50);
+    gradient.addColorStop(0, '#FF6B6B');
+    gradient.addColorStop(1, '#C92A2A');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(5, 5, 40, 40);
+    
+    // Add border
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(5, 5, 40, 40);
+    
+    // Add simple face/details
+    ctx.fillStyle = '#000';
+    // Eyes
+    ctx.fillRect(15, 15, 5, 5);
+    ctx.fillRect(30, 15, 5, 5);
+    // Mouth
+    ctx.fillRect(15, 30, 20, 3);
+    
+    scene.textures.addCanvas('square-doll', canvas);
+}
 function create() {
     // Add stage background
     stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
     stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
     stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
     
-    // Create platforms (simple ground)
-    platforms = this.physics.add.staticGroup();
-    const ground = platforms.create(400, 580, null);
-    ground.setSize(800, 40);
-    ground.setDisplaySize(800, 40);
-    ground.refreshBody();
+    // Create player sprite with Matter physics (heavier mass)
+    player = this.matter.add.sprite(400, 300, 'player', 0);
+    player.setFriction(0.1);
+    player.setMass(10); // Heavier mass so it can push the squares
+    player.setFixedRotation(); // Prevent rotation
     
-    // Draw the ground
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0x654321, 1);
-    graphics.fillRect(0, 560, 800, 40);
-    
-    // Create player sprite
-    player = this.physics.add.sprite(400, 450, 'player', 0);
-    player.setBounce(0.1);
-    player.setCollideWorldBounds(false); // Changed to false to detect edge exits
+    // Store scene reference for later use
+    player.scene = this;
     
     // Create animations
     createAnimations(this);
+    
+    // Create square dolls for current stage
+    createSquareDollsForStage(this, 1);
     
     // Set up keyboard input
     cursors = this.input.keyboard.createCursorKeys();
@@ -373,9 +402,6 @@ function create() {
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
     };
-    
-    // Collisions
-    this.physics.add.collider(player, platforms);
     
     // Create UI elements
     createUI(this);
@@ -688,8 +714,12 @@ function resetGame(scene) {
     stageBackgrounds.bg3.setVisible(false);
     
     // Reset player position
-    player.setPosition(100, 450);
+    player.setPosition(100, 300);
     player.setVelocity(0, 0);
+    
+    // Remove old square dolls and create new ones
+    destroySquareDolls();
+    createSquareDollsForStage(scene, 1);
 }
 
 function switchToStage(scene, stageNumber) {
@@ -702,12 +732,45 @@ function switchToStage(scene, stageNumber) {
         stageBackgrounds.bg3.setVisible(false);
         
         // Position player at left side
-        player.setPosition(50, 450);
+        player.setPosition(50, 300);
         player.setVelocity(0, 0);
+        
+        // Remove old square dolls and create new ones for stage 2
+        destroySquareDolls();
+        createSquareDollsForStage(scene, 2);
     } else if (stageNumber === 3) {
         // Show interstitial
         showInterstitial(scene);
     }
+}
+
+function createSquareDollsForStage(scene, stage) {
+    // Create two square dolls for the current stage
+    const positions = [
+        { x: 250, y: 200 },
+        { x: 550, y: 400 }
+    ];
+    
+    squareDolls = [];
+    
+    positions.forEach(pos => {
+        const doll = scene.matter.add.sprite(pos.x, pos.y, 'square-doll');
+        doll.setFriction(0.5);
+        doll.setMass(3); // Lighter than player so it can be pushed
+        doll.setBounce(0.2);
+        doll.setFixedRotation(); // Prevent rotation
+        
+        squareDolls.push(doll);
+    });
+}
+
+function destroySquareDolls() {
+    squareDolls.forEach(doll => {
+        if (doll && doll.scene) {
+            doll.destroy();
+        }
+    });
+    squareDolls = [];
 }
 
 function showInterstitial(scene) {
@@ -743,56 +806,44 @@ function update() {
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
     const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
     const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
-    const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton);
     
-    // Horizontal movement
+    // Movement speed
+    const speed = 3;
+    
+    // Apply forces for movement (top-down style with no gravity)
     if (leftPressed) {
-        player.setVelocityX(-160);
+        player.setVelocityX(-speed);
         currentDirection = 'left';
     } else if (rightPressed) {
-        player.setVelocityX(160);
+        player.setVelocityX(speed);
         currentDirection = 'right';
     } else {
-        player.setVelocityX(0);
+        player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
     }
     
-    // Vertical movement (for top-down style, though we have gravity)
-    // In a pure top-down game, you'd use setVelocityY instead of jump
-    if (upPressed && player.body.touching.down) {
+    if (upPressed) {
+        player.setVelocityY(-speed);
         currentDirection = 'up';
-    } else if (downPressed && player.body.touching.down) {
+    } else if (downPressed) {
+        player.setVelocityY(speed);
         currentDirection = 'down';
-    }
-    
-    // Jump
-    if (jumpPressed && player.body.touching.down) {
-        player.setVelocityY(-400);
-        isJumping = true;
+    } else {
+        player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
     }
     
     // Update animations
     updatePlayerAnimation();
-    
-    // Reset jumping state when landing
-    if (player.body.touching.down && isJumping) {
-        isJumping = false;
-    }
 }
 
 function updatePlayerAnimation() {
     if (!player.body) return;
     
-    // Jumping animations
-    if (!player.body.touching.down) {
-        const jumpAnim = `jump-${currentDirection}`;
-        if (player.anims.currentAnim?.key !== jumpAnim) {
-            player.anims.play(jumpAnim, true);
-        }
-        return;
-    }
+    const velocityX = Math.abs(player.body.velocity.x);
+    const velocityY = Math.abs(player.body.velocity.y);
+    const isMoving = velocityX > 0.5 || velocityY > 0.5;
     
     // Walking animations
-    if (player.body.velocity.x !== 0) {
+    if (isMoving) {
         const walkAnim = `walk-${currentDirection}`;
         if (player.anims.currentAnim?.key !== walkAnim) {
             player.anims.play(walkAnim, true);

@@ -4,25 +4,20 @@ function create() {
     stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
     stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
     
-    // Create platforms (simple ground)
-    platforms = this.physics.add.staticGroup();
-    const ground = platforms.create(400, 580, null);
-    ground.setSize(800, 40);
-    ground.setDisplaySize(800, 40);
-    ground.refreshBody();
+    // Create player sprite with Matter physics (heavier mass)
+    player = this.matter.add.sprite(400, 300, 'player', 0);
+    player.setFriction(0.1);
+    player.setMass(10); // Heavier mass so it can push the squares
+    player.setFixedRotation(); // Prevent rotation
     
-    // Draw the ground
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0x654321, 1);
-    graphics.fillRect(0, 560, 800, 40);
-    
-    // Create player sprite
-    player = this.physics.add.sprite(400, 450, 'player', 0);
-    player.setBounce(0.1);
-    player.setCollideWorldBounds(false); // Changed to false to detect edge exits
+    // Store scene reference for later use
+    player.scene = this;
     
     // Create animations
     createAnimations(this);
+    
+    // Create square dolls for current stage
+    createSquareDollsForStage(this, 1);
     
     // Set up keyboard input
     cursors = this.input.keyboard.createCursorKeys();
@@ -35,9 +30,6 @@ function create() {
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
     };
-    
-    // Collisions
-    this.physics.add.collider(player, platforms);
     
     // Create UI elements
     createUI(this);
@@ -350,8 +342,12 @@ function resetGame(scene) {
     stageBackgrounds.bg3.setVisible(false);
     
     // Reset player position
-    player.setPosition(100, 450);
+    player.setPosition(100, 300);
     player.setVelocity(0, 0);
+    
+    // Remove old square dolls and create new ones
+    destroySquareDolls();
+    createSquareDollsForStage(scene, 1);
 }
 
 function switchToStage(scene, stageNumber) {
@@ -364,12 +360,45 @@ function switchToStage(scene, stageNumber) {
         stageBackgrounds.bg3.setVisible(false);
         
         // Position player at left side
-        player.setPosition(50, 450);
+        player.setPosition(50, 300);
         player.setVelocity(0, 0);
+        
+        // Remove old square dolls and create new ones for stage 2
+        destroySquareDolls();
+        createSquareDollsForStage(scene, 2);
     } else if (stageNumber === 3) {
         // Show interstitial
         showInterstitial(scene);
     }
+}
+
+function createSquareDollsForStage(scene, stage) {
+    // Create two square dolls for the current stage
+    const positions = [
+        { x: 250, y: 200 },
+        { x: 550, y: 400 }
+    ];
+    
+    squareDolls = [];
+    
+    positions.forEach(pos => {
+        const doll = scene.matter.add.sprite(pos.x, pos.y, 'square-doll');
+        doll.setFriction(0.5);
+        doll.setMass(3); // Lighter than player so it can be pushed
+        doll.setBounce(0.2);
+        doll.setFixedRotation(); // Prevent rotation
+        
+        squareDolls.push(doll);
+    });
+}
+
+function destroySquareDolls() {
+    squareDolls.forEach(doll => {
+        if (doll && doll.scene) {
+            doll.destroy();
+        }
+    });
+    squareDolls = [];
 }
 
 function showInterstitial(scene) {

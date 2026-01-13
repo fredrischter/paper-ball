@@ -11,9 +11,9 @@ const gameConfig = {
         height: 600
     },
     physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 300 },
+        default: 'matter',
+        matter: {
+            gravity: { y: 0 }, // No gravity as requested
             debug: false
         }
     },
@@ -31,6 +31,9 @@ let jumpButton;
 let wasdKeys; // WASD keys
 let platforms;
 let isMobile;
+
+// Physics dolls (squares)
+let squareDolls = [];
 
 // UI buttons
 let menuButton;
