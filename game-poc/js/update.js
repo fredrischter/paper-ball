@@ -16,14 +16,25 @@ function update() {
         return;
     }
     
+    // Check for jump button press (keyboard or mobile)
+    const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
+    if (jumpPressed && !isJumping) {
+        performJump();
+    }
+    
+    // Reset mobile jump flag
+    if (mobileJumpPressed) {
+        mobileJumpPressed = false;
+    }
+    
     // Get input from keyboard or mobile controls
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
     const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
     const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
     
-    // Movement speed
-    const speed = 3;
+    // Movement speed (faster during jump)
+    const speed = isJumping ? 5 : 3;
     
     // Apply forces for movement (top-down style with no gravity)
     if (leftPressed) {
@@ -50,8 +61,25 @@ function update() {
     updatePlayerAnimation();
 }
 
+function performJump() {
+    // Set jumping state
+    isJumping = true;
+    
+    // Play jump animation for current direction
+    const jumpAnim = `jump-${currentDirection}`;
+    player.anims.play(jumpAnim, true);
+    
+    // Reset jumping state after animation completes
+    player.once('animationcomplete', () => {
+        isJumping = false;
+    });
+}
+
 function updatePlayerAnimation() {
     if (!player.body) return;
+    
+    // Don't change animation if jumping
+    if (isJumping) return;
     
     const velocityX = Math.abs(player.body.velocity.x);
     const velocityY = Math.abs(player.body.velocity.y);

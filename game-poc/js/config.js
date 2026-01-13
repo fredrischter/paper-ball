@@ -50,6 +50,7 @@ let moveLeft = false;
 let moveRight = false;
 let moveUp = false;
 let moveDown = false;
+let mobileJumpPressed = false; // Track mobile jump button press
 
 // Animation state
 let currentDirection = 'down'; // down, up, left, right

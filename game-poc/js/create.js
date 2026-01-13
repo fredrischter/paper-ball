@@ -181,10 +181,7 @@ function createMobileControls(scene) {
     }).setOrigin(0.5).setScrollFactor(0);
     
     actionButton.on('pointerdown', () => {
-        if (player.body.touching.down) {
-            player.setVelocityY(-400);
-            isJumping = true;
-        }
+        mobileJumpPressed = true;
     });
 }
 
