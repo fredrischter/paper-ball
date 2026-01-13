@@ -107,10 +107,12 @@ function generateCharacterSpritesheet() {
             ctx.fillStyle = '#FFD1A3';
             ctx.fillRect(x + 10, y + 20, 5, 12 + armOffset);
             
-            // Legs with animation (one in front)
+            // Legs with animation (show walking motion in side view)
             ctx.fillStyle = '#4A4A4A';
-            ctx.fillRect(x + 13, y + 35, 6, 13 + legOffset);
-            ctx.fillRect(x + 13, y + 35, 6, 13 - legOffset);
+            // Back leg (slightly hidden)
+            ctx.fillRect(x + 12, y + 35, 5, 13 - legOffset);
+            // Front leg (more visible)
+            ctx.fillRect(x + 15, y + 35, 5, 13 + legOffset);
             
         } else if (direction === 'right') {
             // Side view - facing right
@@ -130,10 +132,12 @@ function generateCharacterSpritesheet() {
             ctx.fillStyle = '#FFD1A3';
             ctx.fillRect(x + 17, y + 20, 5, 12 - armOffset);
             
-            // Legs with animation (one in front)
+            // Legs with animation (show walking motion in side view)
             ctx.fillStyle = '#4A4A4A';
-            ctx.fillRect(x + 13, y + 35, 6, 13 - legOffset);
-            ctx.fillRect(x + 13, y + 35, 6, 13 + legOffset);
+            // Back leg (slightly hidden)
+            ctx.fillRect(x + 12, y + 35, 5, 13 + legOffset);
+            // Front leg (more visible)
+            ctx.fillRect(x + 15, y + 35, 5, 13 - legOffset);
         }
         
         ctx.restore();
