@@ -584,9 +584,18 @@ function performJump() {
     player.anims.play(jumpAnim, true);
     
     // Reset jumping state after animation completes
-    player.once('animationcomplete', () => {
+    const resetJump = () => {
         isJumping = false;
-    });
+    };
+    
+    player.once('animationcomplete', resetJump);
+    
+    // Fallback timeout in case animation doesn't complete (e.g., player destroyed)
+    setTimeout(() => {
+        if (isJumping) {
+            isJumping = false;
+        }
+    }, 1000); // 8 frames at 10fps = 800ms, so 1000ms is safe
 }
 
 function updatePlayerAnimation() {
