@@ -1,0 +1,19 @@
+{
+  "name": "game-poc",
+  "version": "1.0.0",
+  "description": "A proof of concept for an HTML5 game with animated sprite character, demonstrating all the core requirements for a responsive, cross-platform game.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "npx http-server . -p 8080 -o",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": ["game", "phaser", "html5", "animation", "sprites"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.70.0"
+  }
+}

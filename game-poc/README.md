@@ -1,6 +1,6 @@
 # Game Structure POC
 
-A proof of concept for an HTML5 game with animated sprite character, demonstrating all the core requirements for a responsive, cross-platform game.
+A proof of concept for an HTML5 game built with **Phaser 3**, featuring an animated sprite character and demonstrating all the core requirements for a responsive, cross-platform game.
 
 ## 🎮 Features Implemented
 
@@ -52,15 +52,12 @@ A proof of concept for an HTML5 game with animated sprite character, demonstrati
 
 ## 🚀 How to Run
 
-### Option 1: Direct Browser Access (Recommended)
+### Option 1: Direct Browser Access
 Simply open `index.html` in any modern web browser.
 
-**No external dependencies required!** The default version (`index.html`) uses pure JavaScript/Canvas with procedurally generated sprites.
+**Phaser 3 is included locally** - No internet connection required!
 
-### Option 2: Phaser 3 Version
-Open `index-phaser.html` for the Phaser 3 game engine version (requires internet connection to load Phaser from CDN).
-
-### Option 3: Local Server
+### Option 2: Local Server (Recommended for development)
 For testing advanced features or avoiding CORS issues:
 
 ```bash
@@ -72,11 +69,14 @@ npx http-server . -p 8080
 
 # Using PHP
 php -S localhost:8080
+
+# Using npm (if you've run npm install)
+npm start
 ```
 
 Then navigate to `http://localhost:8080`
 
-### Option 4: Live Server (VS Code)
+### Option 3: Live Server (VS Code)
 If using Visual Studio Code:
 1. Install the "Live Server" extension
 2. Right-click on `index.html`
@@ -84,40 +84,29 @@ If using Visual Studio Code:
 
 ## 🎯 Technical Implementation
 
-### Game Engine Options
-
-This POC includes two implementations:
-
-#### 1. Pure JavaScript/Canvas Version (Default - `index.html`)
-- **No external dependencies** - works offline
-- Procedurally generated sprites using Canvas API
-- Custom animation system
-- Web Audio API for sound
-- ~15KB of JavaScript code
-- Works in any modern browser without internet
-
-#### 2. Phaser 3 Version (`index-phaser.html`)
-- **Phaser 3** (v3.70.0) - Loaded via CDN
+### Game Engine
+- **Phaser 3** (v3.70.0) - Included locally in `lib/phaser.min.js`
 - Industry-standard HTML5 game framework
-- Built-in physics, animations, and input handling
-- Excellent mobile support
-- Requires internet connection to load Phaser library
+- Built-in physics engine, animation system, and input handling
+- Excellent cross-platform support (desktop and mobile)
+- No internet connection required to run
 
 ### Architecture
 ```
 game-poc/
-├── index.html                 # Pure JS/Canvas version (main)
-├── index-phaser.html          # Phaser 3 version
+├── index.html                 # Main HTML file
 ├── requirements.txt           # Detailed requirements document
 ├── README.md                  # This file
+├── package.json              # NPM package configuration
+├── lib/
+│   └── phaser.min.js         # Phaser 3 library (local)
 ├── js/
-│   ├── game-standalone.js     # Pure JS game implementation
-│   ├── game-all.js           # Combined Phaser scripts
-│   ├── config.js             # Phaser: Game configuration
-│   ├── preload.js            # Phaser: Asset loading
-│   ├── create.js             # Phaser: Game initialization
-│   ├── update.js             # Phaser: Game loop
-│   └── game.js               # Phaser: Main initialization
+│   ├── config.js             # Game configuration and state
+│   ├── preload.js            # Asset loading and sprite generation
+│   ├── create.js             # Game initialization and setup
+│   ├── update.js             # Game loop and input handling
+│   ├── game.js               # Main game initialization
+│   └── game-all.js           # Combined game scripts
 └── assets/
     ├── spritesheets/         # (Placeholder for sprite assets)
     └── audio/                # (Placeholder for audio assets)
@@ -125,13 +114,14 @@ game-poc/
 
 ### Code Structure
 
-#### Pure JavaScript Version
-The standalone game uses a class-based architecture:
-- **Player class** - Character with animation state machine
-- **Animation class** - Frame-based animation system
-- **Procedural sprite generation** - Creates sprites at runtime
-- **Game loop** - requestAnimationFrame-based rendering
-- **Input system** - Keyboard and touch event handling
+The game is modular and organized into separate files:
+- **config.js** - Game configuration, constants, and global state variables
+- **preload.js** - Asset loading and procedural sprite generation using Canvas API
+- **create.js** - Scene setup, UI element creation, animation definitions, and event handlers
+- **update.js** - Game loop that processes input and updates player state each frame
+- **game.js** - Initializes the Phaser game instance with the configuration
+
+For ease of deployment, these files are also combined into `game-all.js`.
 
 ## 📱 Mobile Support
 

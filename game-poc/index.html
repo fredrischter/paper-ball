@@ -14,10 +14,9 @@
         }
         
         body {
-            background: #1a1a2e;
+            background: #000;
             overflow: hidden;
             font-family: Arial, sans-serif;
-            touch-action: none;
         }
         
         #game-container {
@@ -26,171 +25,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
         }
         
-        #gameCanvas {
+        canvas {
             display: block;
-            background: #2d5a3d;
-            border: 3px solid #333;
-        }
-        
-        /* UI Buttons */
-        .ui-button {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: rgba(50, 50, 50, 0.8);
-            border: 3px solid #fff;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            user-select: none;
-            z-index: 100;
-        }
-        
-        .ui-button:active {
-            transform: scale(0.95);
-        }
-        
-        #menu-btn {
-            top: 20px;
-            left: 20px;
-            font-size: 24px;
-        }
-        
-        #sound-btn {
-            top: 20px;
-            right: 20px;
-            font-size: 24px;
-        }
-        
-        #title {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            z-index: 100;
-            background: rgba(0,0,0,0.5);
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
-        
-        #instructions {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            font-size: 14px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            z-index: 100;
-            background: rgba(0,0,0,0.5);
-            padding: 10px 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        /* Mobile controls */
-        .dpad-container {
-            position: absolute;
-            bottom: 80px;
-            left: 80px;
-            width: 180px;
-            height: 180px;
-            display: none;
-            z-index: 100;
-        }
-        
-        .dpad-btn {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: rgba(70, 70, 70, 0.7);
-            border: 2px solid #fff;
-            border-radius: 8px;
-            color: white;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .dpad-btn:active {
-            background: rgba(100, 100, 100, 0.9);
-        }
-        
-        #dpad-up { top: 0; left: 60px; }
-        #dpad-down { bottom: 0; left: 60px; }
-        #dpad-left { top: 60px; left: 0; }
-        #dpad-right { top: 60px; right: 0; }
-        
-        #action-btn {
-            position: absolute;
-            bottom: 120px;
-            right: 80px;
-            width: 80px;
-            height: 80px;
-            background: rgba(220, 50, 50, 0.8);
-            border: 3px solid #fff;
-            border-radius: 50%;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            user-select: none;
-            z-index: 100;
-        }
-        
-        #action-btn:active {
-            background: rgba(255, 70, 70, 1);
-        }
-        
-        @media (max-width: 768px) {
-            .dpad-container, #action-btn {
-                display: flex !important;
-            }
+            max-width: 100%;
+            max-height: 100%;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <!-- UI Elements -->
-        <div id="title">Game POC - Character Demo</div>
-        <div id="instructions">Arrow keys or WASD to move, Space to jump</div>
-        
-        <!-- Top UI Buttons -->
-        <div id="menu-btn" class="ui-button">☰</div>
-        <div id="sound-btn" class="ui-button">🔊</div>
-        
-        <!-- Mobile D-pad -->
-        <div class="dpad-container">
-            <div id="dpad-up" class="dpad-btn">▲</div>
-            <div id="dpad-down" class="dpad-btn">▼</div>
-            <div id="dpad-left" class="dpad-btn">◄</div>
-            <div id="dpad-right" class="dpad-btn">►</div>
-        </div>
-        
-        <!-- Mobile Action Button -->
-        <div id="action-btn">JUMP</div>
-        
-        <!-- Game Canvas -->
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="phaser-game"></div>
     </div>
     
-    <script src="js/game-standalone.js"></script>
+    <!-- Phaser 3 from local library -->
+    <script src="lib/phaser.min.js"></script>
+    
+    <!-- All game code in one file for reliability -->
+    <script src="js/game-all.js"></script>
 </body>
 </html>
