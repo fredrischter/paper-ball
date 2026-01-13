@@ -34,6 +34,15 @@ function preload() {
     // Load interstitial image
     this.load.image('interstitial', 'assets/images/interstitial.png');
     
+    // Load particle textures
+    this.load.image('particle-smoke', 'assets/images/particle-smoke.png');
+    this.load.image('particle-spark', 'assets/images/particle-spark.png');
+    this.load.image('particle-confetti', 'assets/images/particle-confetti.png');
+    this.load.image('particle-confetti1', 'assets/images/particle-confetti1.png');
+    this.load.image('particle-confetti2', 'assets/images/particle-confetti2.png');
+    this.load.image('particle-confetti3', 'assets/images/particle-confetti3.png');
+    this.load.image('particle-confetti4', 'assets/images/particle-confetti4.png');
+    
     // Note: Background music uses Web Audio API (no file to load)
     // In production, you could load: this.load.audio('bgmusic', 'assets/audio/background.mp3');
 }

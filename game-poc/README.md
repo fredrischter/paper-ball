@@ -61,6 +61,14 @@ A proof of concept for an HTML5 game built with **Phaser 3**, featuring an anima
 - D-pad arrows (up, down, left, right)
 - Consistent visual style
 
+### ✅ Particle Effects System
+- **All particle textures from PNG files** - No procedural generation at runtime
+- **Smoke particles**: Gray puffs emitted when character runs
+- **Spark particles**: Yellow/orange sparks when character hits dolls
+- **Celebration confetti**: Colorful shower when completing a stage (2-second display)
+- **Multiple confetti variations**: Different shapes and colors from separate PNG files
+- **Phaser particle system**: Efficient GPU-accelerated particle rendering
+
 ## 🚀 How to Run
 
 ### Option 1: Direct Browser Access

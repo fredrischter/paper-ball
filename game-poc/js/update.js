@@ -94,6 +94,22 @@ function updatePlayerAnimation() {
     const velocityY = Math.abs(player.body.velocity.y);
     const isMoving = velocityX > 0.5 || velocityY > 0.5;
     
+    // Control smoke particles based on movement
+    if (smokeParticles) {
+        if (isMoving) {
+            // Emit smoke particles when running
+            smokeParticles.startFollow(player, 0, 10); // Follow player with offset below
+            if (!smokeParticles.emitting) {
+                smokeParticles.start();
+            }
+        } else {
+            // Stop emitting when standing still
+            if (smokeParticles.emitting) {
+                smokeParticles.stop();
+            }
+        }
+    }
+    
     // Walking animations
     if (isMoving) {
         const walkAnim = `walk-${currentDirection}`;

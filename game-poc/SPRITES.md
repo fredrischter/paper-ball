@@ -26,7 +26,14 @@ assets/
     ├── stage3-bg.png      # Stage 3 background
     ├── popup-bg.png       # Popup overlay background
     ├── square-doll.png    # Square doll sprite
-    └── interstitial.png   # Interstitial screen
+    ├── interstitial.png   # Interstitial screen
+    ├── particle-smoke.png      # Smoke particle (8x8)
+    ├── particle-spark.png      # Spark particle (6x6)
+    ├── particle-confetti.png   # Confetti particle (10x10)
+    ├── particle-confetti1.png  # Confetti variation 1
+    ├── particle-confetti2.png  # Confetti variation 2
+    ├── particle-confetti3.png  # Confetti variation 3
+    └── particle-confetti4.png  # Confetti variation 4
 ```
 
 ## Generating Sprites
@@ -98,6 +105,19 @@ This runs `scripts/generate-sprites.js` which creates all PNG files.
 - `popup-bg.png`: 500×300 popup background with border
 - `square-doll.png`: 50×50 red square doll with face
 - `interstitial.png`: 800×600 radial gradient transition screen
+
+#### 6. Particle Textures
+- **Purpose**: Used for visual effects
+- **Files**:
+  - `particle-smoke.png`: 8×8 gray smoke puff (running effect)
+  - `particle-spark.png`: 6×6 yellow/orange star (collision effect)
+  - `particle-confetti.png`: 10×10 colorful square (celebration)
+  - `particle-confetti1.png` to `particle-confetti4.png`: Variations with different shapes and colors
+
+**Particle Effects**:
+- **Smoke**: Emitted behind character while running
+- **Sparks**: Appear when character collides with dolls
+- **Celebration**: Shower of confetti when completing a stage
 
 ## How Sprites Are Loaded
 

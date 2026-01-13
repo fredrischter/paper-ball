@@ -432,6 +432,96 @@ function generateInterstitial() {
     console.log(`✓ Generated interstitial.png (${width}x${height})`);
 }
 
+/**
+ * Generate Particle Textures
+ * Creates small PNG textures for particle effects
+ */
+function generateParticleTextures() {
+    // Smoke particle - small gray puff
+    const smokeSize = 8;
+    const smokeCanvas = createCanvas(smokeSize, smokeSize);
+    const smokeCtx = smokeCanvas.getContext('2d');
+    
+    // Circular gradient for soft smoke
+    const smokeGradient = smokeCtx.createRadialGradient(4, 4, 0, 4, 4, 4);
+    smokeGradient.addColorStop(0, 'rgba(200, 200, 200, 0.8)');
+    smokeGradient.addColorStop(0.5, 'rgba(150, 150, 150, 0.5)');
+    smokeGradient.addColorStop(1, 'rgba(100, 100, 100, 0)');
+    smokeCtx.fillStyle = smokeGradient;
+    smokeCtx.fillRect(0, 0, smokeSize, smokeSize);
+    
+    const smokeBuffer = smokeCanvas.toBuffer('image/png');
+    fs.writeFileSync(path.join(IMAGES_DIR, 'particle-smoke.png'), smokeBuffer);
+    console.log(`✓ Generated particle-smoke.png (${smokeSize}x${smokeSize})`);
+    
+    // Spark particle - bright yellow/orange star
+    const sparkSize = 6;
+    const sparkCanvas = createCanvas(sparkSize, sparkSize);
+    const sparkCtx = sparkCanvas.getContext('2d');
+    
+    // Star shape for spark
+    sparkCtx.fillStyle = '#FFD700';
+    sparkCtx.beginPath();
+    sparkCtx.arc(3, 3, 2.5, 0, Math.PI * 2);
+    sparkCtx.fill();
+    
+    // Bright center
+    sparkCtx.fillStyle = '#FFFF00';
+    sparkCtx.beginPath();
+    sparkCtx.arc(3, 3, 1, 0, Math.PI * 2);
+    sparkCtx.fill();
+    
+    const sparkBuffer = sparkCanvas.toBuffer('image/png');
+    fs.writeFileSync(path.join(IMAGES_DIR, 'particle-spark.png'), sparkBuffer);
+    console.log(`✓ Generated particle-spark.png (${sparkSize}x${sparkSize})`);
+    
+    // Celebration confetti - colorful squares and circles
+    const confettiSize = 10;
+    const confettiCanvas = createCanvas(confettiSize, confettiSize);
+    const confettiCtx = confettiCanvas.getContext('2d');
+    
+    // Random colorful shape
+    const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6BCF7F', '#C77DFF', '#FF8E53'];
+    confettiCtx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+    
+    // Draw a rotated square
+    confettiCtx.save();
+    confettiCtx.translate(5, 5);
+    confettiCtx.rotate(Math.PI / 4);
+    confettiCtx.fillRect(-3, -3, 6, 6);
+    confettiCtx.restore();
+    
+    const confettiBuffer = confettiCanvas.toBuffer('image/png');
+    fs.writeFileSync(path.join(IMAGES_DIR, 'particle-confetti.png'), confettiBuffer);
+    console.log(`✓ Generated particle-confetti.png (${confettiSize}x${confettiSize})`);
+    
+    // Additional confetti variations
+    for (let i = 0; i < 4; i++) {
+        const varCanvas = createCanvas(confettiSize, confettiSize);
+        const varCtx = varCanvas.getContext('2d');
+        varCtx.fillStyle = colors[(i + 1) % colors.length];
+        
+        if (i % 2 === 0) {
+            // Circle
+            varCtx.beginPath();
+            varCtx.arc(5, 5, 4, 0, Math.PI * 2);
+            varCtx.fill();
+        } else {
+            // Triangle
+            varCtx.beginPath();
+            varCtx.moveTo(5, 2);
+            varCtx.lineTo(8, 8);
+            varCtx.lineTo(2, 8);
+            varCtx.closePath();
+            varCtx.fill();
+        }
+        
+        const varBuffer = varCanvas.toBuffer('image/png');
+        fs.writeFileSync(path.join(IMAGES_DIR, `particle-confetti${i + 1}.png`), varBuffer);
+        console.log(`✓ Generated particle-confetti${i + 1}.png (${confettiSize}x${confettiSize})`);
+    }
+}
+
 // Generate all sprites
 try {
     generateCharacterSpritesheet();
@@ -441,6 +531,7 @@ try {
     generateStageBackgrounds();
     generatePopupBackground();
     generateInterstitial();
+    generateParticleTextures();
     
     console.log('\n✅ All spritesheets generated successfully!');
     console.log(`\n📁 Spritesheets: ${SPRITESHEET_DIR}`);

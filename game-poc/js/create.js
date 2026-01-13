@@ -16,6 +16,9 @@ function create() {
     // Create animations
     createAnimations(this);
     
+    // Create particle systems
+    createParticleSystems(this);
+    
     // Create square dolls for current stage
     createSquareDollsForStage(this, 1);
     
@@ -31,11 +34,110 @@ function create() {
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
     };
     
+    // Set up collision detection for sparks
+    this.matter.world.on('collisionstart', function(event) {
+        event.pairs.forEach(pair => {
+            // Check if player hit a doll
+            const { bodyA, bodyB } = pair;
+            if ((bodyA.gameObject === player && squareDolls.includes(bodyB.gameObject)) ||
+                (bodyB.gameObject === player && squareDolls.includes(bodyA.gameObject))) {
+                // Emit sparks at collision point
+                const hitX = (bodyA.position.x + bodyB.position.x) / 2;
+                const hitY = (bodyA.position.y + bodyB.position.y) / 2;
+                emitCollisionSparks(hitX, hitY);
+            }
+        });
+    });
+    
     // Create UI elements
     createUI(this);
     
     // Initialize sound (Web Audio API)
     initSound(this);
+}
+
+function createParticleSystems(scene) {
+    // Smoke particles - emit when player is running
+    smokeParticles = scene.add.particles(0, 0, 'particle-smoke', {
+        speed: { min: 10, max: 30 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.5, end: 0 },
+        alpha: { start: 0.6, end: 0 },
+        lifespan: 500,
+        frequency: 80,
+        emitting: false,
+        blendMode: 'ADD'
+    });
+    smokeParticles.setDepth(5);
+    
+    // Spark particles - emit when hitting blocks
+    sparkParticles = scene.add.particles(0, 0, 'particle-spark', {
+        speed: { min: 50, max: 150 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 1, end: 0.2 },
+        alpha: { start: 1, end: 0 },
+        lifespan: 300,
+        gravityY: 0,
+        emitting: false,
+        blendMode: 'ADD'
+    });
+    sparkParticles.setDepth(100);
+    
+    // Celebration particles - shower when level completes
+    celebrationParticles = scene.add.particles(0, 0, 'particle-confetti', {
+        speed: { min: 100, max: 300 },
+        angle: { min: 240, max: 300 },
+        scale: { start: 1, end: 0.5 },
+        alpha: { start: 1, end: 0.5 },
+        lifespan: 2000,
+        gravityY: 0,
+        rotate: { min: 0, max: 360 },
+        emitting: false,
+        blendMode: 'NORMAL'
+    });
+    celebrationParticles.setDepth(200);
+}
+
+function emitCollisionSparks(x, y) {
+    if (!sparkParticles) return;
+    
+    sparkParticles.emitParticleAt(x, y, 8);
+}
+
+function startCelebration(scene) {
+    if (!celebrationParticles) return;
+    
+    // Create multiple confetti emitters across the screen
+    const confettiTextures = ['particle-confetti', 'particle-confetti1', 'particle-confetti2', 'particle-confetti3', 'particle-confetti4'];
+    
+    // Emit celebration particles from multiple points
+    for (let i = 0; i < 5; i++) {
+        const x = 160 + i * 160;
+        const texture = confettiTextures[i % confettiTextures.length];
+        
+        // Create temporary emitter for each confetti type
+        const emitter = scene.add.particles(x, 50, texture, {
+            speed: { min: 100, max: 300 },
+            angle: { min: 60, max: 120 },
+            scale: { start: 1, end: 0.3 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 2000,
+            gravityY: 0,
+            rotate: { min: 0, max: 360 },
+            quantity: 3,
+            frequency: 50,
+            blendMode: 'NORMAL'
+        });
+        emitter.setDepth(200);
+        
+        // Stop after 2 seconds
+        scene.time.delayedCall(2000, () => {
+            emitter.stop();
+            scene.time.delayedCall(2500, () => {
+                emitter.destroy();
+            });
+        });
+    }
 }
 
 function createAnimations(scene) {
@@ -351,21 +453,33 @@ function switchToStage(scene, stageNumber) {
     currentStage = stageNumber;
     
     if (stageNumber === 2) {
-        // Switch to stage 2
-        stageBackgrounds.bg1.setVisible(false);
-        stageBackgrounds.bg2.setVisible(true);
-        stageBackgrounds.bg3.setVisible(false);
+        // Trigger celebration for completing stage 1
+        startCelebration(scene);
         
-        // Position player at left side
-        player.setPosition(50, 300);
-        player.setVelocity(0, 0);
-        
-        // Remove old square dolls and create new ones for stage 2
-        destroySquareDolls();
-        createSquareDollsForStage(scene, 2);
+        // Wait 2 seconds for celebration, then switch
+        scene.time.delayedCall(2000, () => {
+            // Switch to stage 2
+            stageBackgrounds.bg1.setVisible(false);
+            stageBackgrounds.bg2.setVisible(true);
+            stageBackgrounds.bg3.setVisible(false);
+            
+            // Position player at left side
+            player.setPosition(50, 300);
+            player.setVelocity(0, 0);
+            
+            // Remove old square dolls and create new ones for stage 2
+            destroySquareDolls();
+            createSquareDollsForStage(scene, 2);
+        });
     } else if (stageNumber === 3) {
-        // Show interstitial
-        showInterstitial(scene);
+        // Trigger celebration for completing stage 2
+        startCelebration(scene);
+        
+        // Wait 2 seconds for celebration, then show interstitial
+        scene.time.delayedCall(2000, () => {
+            // Show interstitial
+            showInterstitial(scene);
+        });
     }
 }
 

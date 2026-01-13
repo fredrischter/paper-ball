@@ -63,3 +63,8 @@ let stageBackgrounds = {}; // Will hold background images
 // Popup state
 let popupOverlay = null;
 let popupActive = false;
+
+// Particle systems
+let smokeParticles = null;     // Running smoke particles
+let sparkParticles = null;      // Collision spark particles
+let celebrationParticles = null; // Level complete celebration
