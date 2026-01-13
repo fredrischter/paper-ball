@@ -77,22 +77,60 @@ paper-ball/
 
 ## 📱 Deploy para Mobile
 
-### Android/iOS com Capacitor
+### Automated Build with GitHub Actions
+
+Este projeto possui um workflow do GitHub Actions que automaticamente compila a versão Android da aplicação. O workflow é executado:
+- Em cada push para os branches `main` ou `master`
+- Em cada Pull Request
+- Manualmente através do GitHub Actions (workflow_dispatch)
+
+Os arquivos APK gerados (debug e release) ficam disponíveis como artefatos do workflow e podem ser baixados por 30 dias.
+
+Para disparar manualmente o build:
+1. Vá até a aba "Actions" no repositório GitHub
+2. Selecione o workflow "Android Build"
+3. Clique em "Run workflow"
+4. Após a conclusão, baixe os APKs na seção "Artifacts"
+
+### Build Local - Android/iOS com Capacitor
 
 ```bash
-# Instalar Capacitor
-npm install @capacitor/core @capacitor/cli
-npx cap init
+# Instalar dependências
+npm install
 
-# Adicionar plataformas
+# Adicionar plataforma Android (primeira vez)
 npx cap add android
+
+# Compilar web assets e sincronizar
+npm run build
+npx cap sync android
+
+# Build do APK Debug
+npm run android:build-debug
+
+# Build do APK Release
+npm run android:build-release
+
+# Ou abrir no Android Studio para build manual
+npx cap open android
+```
+
+**Nota para usuários Windows:** O comando `./gradlew` pode não funcionar corretamente no prompt de comando do Windows. Recomendamos usar o GitHub Actions workflow para builds automáticos ou abrir o projeto no Android Studio (`npx cap open android`) e compilar através da IDE.
+
+### iOS
+
+```bash
+# Instalar dependências
+npm install
+
+# Adicionar plataforma iOS (primeira vez, requer macOS)
 npx cap add ios
 
-# Copiar arquivos web
-npx cap copy
+# Compilar web assets e sincronizar
+npm run build
+npx cap sync ios
 
-# Abrir no Android Studio ou Xcode
-npx cap open android
+# Abrir no Xcode
 npx cap open ios
 ```
 
