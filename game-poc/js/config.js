@@ -28,6 +28,7 @@ const gameConfig = {
 let player;
 let cursors;
 let jumpButton;
+let wasdKeys; // WASD keys
 let platforms;
 let isMobile;
 

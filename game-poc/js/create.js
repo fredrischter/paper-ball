@@ -27,10 +27,12 @@ function create() {
     jumpButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     
     // WASD keys as alternative
-    const keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-    const keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    const keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-    const keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    wasdKeys = {
+        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+        A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+        D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+    };
     
     // Collisions
     this.physics.add.collider(player, platforms);

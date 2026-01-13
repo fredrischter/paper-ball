@@ -2,10 +2,10 @@ function update() {
     if (!player) return;
     
     // Get input from keyboard or mobile controls
-    const leftPressed = cursors.left.isDown || this.input.keyboard.addKey('A').isDown || moveLeft;
-    const rightPressed = cursors.right.isDown || this.input.keyboard.addKey('D').isDown || moveRight;
-    const upPressed = cursors.up.isDown || this.input.keyboard.addKey('W').isDown || moveUp;
-    const downPressed = cursors.down.isDown || this.input.keyboard.addKey('S').isDown || moveDown;
+    const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
+    const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
+    const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
+    const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
     const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton);
     
     // Horizontal movement
