@@ -23,15 +23,19 @@ A proof of concept for an HTML5 game built with **Phaser 3**, featuring an anima
 
 ### ✅ Animated Sprite Character
 - **Complete animation set (65 frames total):**
-  - 1 frame for standing position
-  - 8 frames for walking down
-  - 8 frames for walking left
-  - 8 frames for walking right
-  - 8 frames for walking up
-  - 8 frames for jumping down
-  - 8 frames for jumping left
-  - 8 frames for jumping right
-  - 8 frames for jumping up
+  - 1 frame for standing position (facing down)
+  - 8 frames for walking down (front view with face visible)
+  - 8 frames for walking left (side profile view)
+  - 8 frames for walking right (side profile view)
+  - 8 frames for walking up (back view with hair visible)
+  - 8 frames for jumping down (front view)
+  - 8 frames for jumping left (side profile)
+  - 8 frames for jumping right (side profile)
+  - 8 frames for jumping up (back view)
+- **Directional visuals**: Character sprite changes appearance based on direction:
+  - **Down (front)**: Shows character's face with two eyes, full body
+  - **Up (back)**: Shows back of head with hair, no face visible
+  - **Left/Right (sides)**: Profile view with one eye visible
 - **All animations from PNG spritesheet** (`assets/spritesheets/character.png`)
 - **Smooth transitions between directions**
 

@@ -36,51 +36,138 @@ function generateCharacterSpritesheet() {
     const canvas = createCanvas(frameWidth * totalFrames, frameHeight);
     const ctx = canvas.getContext('2d');
     
-    // Helper to draw character
-    function drawCharacter(x, y, color, legOffset = 0) {
-        // Head
-        ctx.fillStyle = '#FFD1A3';
-        ctx.fillRect(x + 10, y + 5, 12, 12);
+    // Helper to draw character with directional facing
+    function drawCharacter(x, y, color, direction = 'down', legOffset = 0, armOffset = 0) {
+        ctx.save();
         
-        // Body
-        ctx.fillStyle = color;
-        ctx.fillRect(x + 8, y + 17, 16, 18);
+        if (direction === 'down') {
+            // Front view - facing down
+            // Head
+            ctx.fillStyle = '#FFD1A3';
+            ctx.fillRect(x + 10, y + 5, 12, 12);
+            
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x + 12, y + 9, 2, 2);
+            ctx.fillRect(x + 18, y + 9, 2, 2);
+            
+            // Body
+            ctx.fillStyle = color;
+            ctx.fillRect(x + 8, y + 17, 16, 18);
+            
+            // Arms (both visible)
+            ctx.fillStyle = '#FFD1A3';
+            ctx.fillRect(x + 4, y + 20, 6, 12 + armOffset);
+            ctx.fillRect(x + 22, y + 20, 6, 12 - armOffset);
+            
+            // Legs with animation
+            ctx.fillStyle = '#4A4A4A';
+            ctx.fillRect(x + 10, y + 35, 5, 13 - legOffset);
+            ctx.fillRect(x + 17, y + 35, 5, 13 + legOffset);
+            
+        } else if (direction === 'up') {
+            // Back view - facing up
+            // Head (back of head)
+            ctx.fillStyle = '#D4A574';
+            ctx.fillRect(x + 10, y + 5, 12, 12);
+            
+            // Hair/back of head detail
+            ctx.fillStyle = '#8B6F47';
+            ctx.fillRect(x + 10, y + 5, 12, 4);
+            
+            // Body
+            ctx.fillStyle = color;
+            ctx.fillRect(x + 8, y + 17, 16, 18);
+            
+            // Arms (both visible from back)
+            ctx.fillStyle = '#D4A574';
+            ctx.fillRect(x + 4, y + 20, 6, 12 - armOffset);
+            ctx.fillRect(x + 22, y + 20, 6, 12 + armOffset);
+            
+            // Legs with animation
+            ctx.fillStyle = '#4A4A4A';
+            ctx.fillRect(x + 10, y + 35, 5, 13 + legOffset);
+            ctx.fillRect(x + 17, y + 35, 5, 13 - legOffset);
+            
+        } else if (direction === 'left') {
+            // Side view - facing left
+            // Head
+            ctx.fillStyle = '#FFD1A3';
+            ctx.fillRect(x + 12, y + 5, 10, 12);
+            
+            // Eye (one eye visible from side)
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x + 13, y + 9, 2, 2);
+            
+            // Body
+            ctx.fillStyle = color;
+            ctx.fillRect(x + 10, y + 17, 14, 18);
+            
+            // Arm (one arm visible)
+            ctx.fillStyle = '#FFD1A3';
+            ctx.fillRect(x + 10, y + 20, 5, 12 + armOffset);
+            
+            // Legs with animation (one in front)
+            ctx.fillStyle = '#4A4A4A';
+            ctx.fillRect(x + 13, y + 35, 6, 13 + legOffset);
+            ctx.fillRect(x + 13, y + 35, 6, 13 - legOffset);
+            
+        } else if (direction === 'right') {
+            // Side view - facing right
+            // Head
+            ctx.fillStyle = '#FFD1A3';
+            ctx.fillRect(x + 10, y + 5, 10, 12);
+            
+            // Eye (one eye visible from side)
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x + 17, y + 9, 2, 2);
+            
+            // Body
+            ctx.fillStyle = color;
+            ctx.fillRect(x + 8, y + 17, 14, 18);
+            
+            // Arm (one arm visible)
+            ctx.fillStyle = '#FFD1A3';
+            ctx.fillRect(x + 17, y + 20, 5, 12 - armOffset);
+            
+            // Legs with animation (one in front)
+            ctx.fillStyle = '#4A4A4A';
+            ctx.fillRect(x + 13, y + 35, 6, 13 - legOffset);
+            ctx.fillRect(x + 13, y + 35, 6, 13 + legOffset);
+        }
         
-        // Arms
-        ctx.fillStyle = '#FFD1A3';
-        ctx.fillRect(x + 4, y + 20, 6, 12);
-        ctx.fillRect(x + 22, y + 20, 6, 12);
-        
-        // Legs with animation
-        ctx.fillStyle = '#4A4A4A';
-        ctx.fillRect(x + 10, y + 35, 5, 13 - legOffset);
-        ctx.fillRect(x + 17, y + 35, 5, 13 + legOffset);
+        ctx.restore();
     }
     
     let frameIndex = 0;
     
-    // Standing frame
-    drawCharacter(frameIndex * frameWidth, 0, '#4169E1', 0);
+    // Standing frame (default down direction)
+    drawCharacter(frameIndex * frameWidth, 0, '#4169E1', 'down', 0, 0);
     frameIndex++;
     
     // Walking frames (8 frames per direction: down, left, right, up)
-    for (let dir = 0; dir < 4; dir++) {
+    const walkDirections = ['down', 'left', 'right', 'up'];
+    for (let dirIdx = 0; dirIdx < 4; dirIdx++) {
+        const direction = walkDirections[dirIdx];
         for (let i = 0; i < framesPerAnimation; i++) {
             const x = frameIndex * frameWidth;
             const y = 0;
-            const legOffset = Math.sin(i / framesPerAnimation * Math.PI * 2) * 2;
-            drawCharacter(x, y, '#4169E1', legOffset);
+            const legOffset = Math.sin(i / framesPerAnimation * Math.PI * 2) * 3;
+            const armOffset = Math.sin(i / framesPerAnimation * Math.PI * 2) * 2;
+            drawCharacter(x, y, '#4169E1', direction, legOffset, armOffset);
             frameIndex++;
         }
     }
     
     // Jumping frames (8 frames per direction: down, left, right, up)
-    for (let dir = 0; dir < 4; dir++) {
+    const jumpDirections = ['down', 'left', 'right', 'up'];
+    for (let dirIdx = 0; dirIdx < 4; dirIdx++) {
+        const direction = jumpDirections[dirIdx];
         for (let i = 0; i < framesPerAnimation; i++) {
             const x = frameIndex * frameWidth;
             const y = 0;
             const jumpOffset = -Math.abs(Math.sin(i / framesPerAnimation * Math.PI)) * 10;
-            drawCharacter(x, y + jumpOffset, '#4169E1', 0);
+            drawCharacter(x, y + jumpOffset, '#4169E1', direction, 0, 0);
             frameIndex++;
         }
     }

@@ -53,9 +53,20 @@ This runs `scripts/generate-sprites.js` which creates all PNG files.
 - **Dimensions**: 2080×48 pixels (65 frames × 32px width)
 - **Frame size**: 32×48 pixels
 - **Total frames**: 65
-  - Frame 0: Standing (1 frame)
+  - Frame 0: Standing (1 frame, facing down)
   - Frames 1-32: Walking in 4 directions (8 frames each)
+    - Down-facing (front view)
+    - Left-facing (side view)
+    - Right-facing (side view)
+    - Up-facing (back view)
   - Frames 33-64: Jumping in 4 directions (8 frames each)
+    - Same directional facing as walking animations
+  
+**Directional Visuals**: Each direction has a distinct visual appearance:
+- **Down (front)**: Shows character's face with two eyes, arms on both sides
+- **Up (back)**: Shows back of head with hair detail, no face visible
+- **Left (side)**: Profile view with one eye visible, one arm showing
+- **Right (side)**: Profile view facing right with one eye visible, one arm showing
 
 #### 2. UI Buttons Spritesheet (`ui-buttons.png`)
 - **Dimensions**: 448×64 pixels (7 frames × 64px width)
@@ -146,18 +157,26 @@ Create your own PNG files with the same dimensions and filenames, or update the 
 ### Character Animation Frames
 
 ```
-Frame 0: Standing
+Frame 0: Standing (facing down/front)
 
-Frames 1-8: Walk Down
-Frames 9-16: Walk Left
-Frames 17-24: Walk Right
-Frames 25-32: Walk Up
+Walking Animations:
+Frames 1-8:   Walk Down (front view - face visible, both arms)
+Frames 9-16:  Walk Left (side view - left profile, one eye)
+Frames 17-24: Walk Right (side view - right profile, one eye)  
+Frames 25-32: Walk Up (back view - hair visible, no face)
 
-Frames 33-40: Jump Down
-Frames 41-48: Jump Left
-Frames 49-56: Jump Right
-Frames 57-64: Jump Up
+Jumping Animations:
+Frames 33-40: Jump Down (front view)
+Frames 41-48: Jump Left (side view - left profile)
+Frames 49-56: Jump Right (side view - right profile)
+Frames 57-64: Jump Up (back view)
 ```
+
+**Directional Features**:
+- Each direction shows a different view of the character
+- Walking animations include leg movement
+- Jumping animations include vertical displacement
+- Direction transitions are handled by the animation system
 
 ### UI Buttons Frames
 
