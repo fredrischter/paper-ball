@@ -111,13 +111,6 @@ function createPlayerSpritesheet(scene) {
     frameIndex++;
     
     // Walking animations (8 frames per direction)
-    const directions = [
-        { name: 'down', row: 0 },
-        { name: 'left', row: 1 },
-        { name: 'right', row: 1 },
-        { name: 'up', row: 2 }
-    ];
-    
     // Walking frames
     for (let dir = 0; dir < 4; dir++) {
         for (let i = 0; i < framesPerAnimation; i++) {
