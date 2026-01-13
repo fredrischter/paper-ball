@@ -1,8 +1,15 @@
 # Game Structure POC
 
-A proof of concept for an HTML5 game built with **Phaser 3**, featuring an animated sprite character and demonstrating all the core requirements for a responsive, cross-platform game.
+A proof of concept for an HTML5 game built with **Phaser 3**, featuring an animated sprite character, multi-stage gameplay, physics-based interactions, and demonstrating all the core requirements for a responsive, cross-platform game.
 
 ## 🎮 Features Implemented
+
+### ✅ Pre-Generated PNG Assets
+- **All sprites are PNG files** - No runtime procedural generation
+- **Spritesheets for animations** - Character, UI buttons, popup buttons
+- **Background images** - Stage backgrounds, popup, interstitial
+- **Easy to customize** - Edit PNG files directly or regenerate with script
+- **Performance optimized** - Faster loading, no canvas overhead
 
 ### ✅ Responsive Design
 - **Playable on any screen size** - Uses Phaser 3's scaling system
@@ -15,7 +22,7 @@ A proof of concept for an HTML5 game built with **Phaser 3**, featuring an anima
   - 🔽 **Bottom-right:** Action button (mobile only)
 
 ### ✅ Animated Sprite Character
-- **Complete animation set:**
+- **Complete animation set (65 frames total):**
   - 1 frame for standing position
   - 8 frames for walking down
   - 8 frames for walking left
@@ -25,17 +32,17 @@ A proof of concept for an HTML5 game built with **Phaser 3**, featuring an anima
   - 8 frames for jumping left
   - 8 frames for jumping right
   - 8 frames for jumping up
-- **All animations mapped from a single spritesheet**
+- **All animations from PNG spritesheet** (`assets/spritesheets/character.png`)
 - **Smooth transitions between directions**
 
 ### ✅ Control Systems
 - **Keyboard controls:**
   - Arrow keys for directional movement
   - WASD as alternative movement keys
-  - Space bar for jump action
+  - Space bar for jump action (disabled in top-down mode)
 - **Mobile touch controls:**
   - On-screen D-pad for 4-directional movement
-  - Action button for jumping
+  - Action button for actions
   - Touch controls only visible on mobile devices
 
 ### ✅ Audio System
@@ -44,7 +51,7 @@ A proof of concept for an HTML5 game built with **Phaser 3**, featuring an anima
 - Visual feedback (button transparency) for sound state
 
 ### ✅ UI from Spritesheet
-- All UI buttons generated from a spritesheet
+- All UI buttons loaded from PNG spritesheet (`assets/spritesheets/ui-buttons.png`)
 - Menu button with hamburger icon
 - Sound button with speaker icon
 - D-pad arrows (up, down, left, right)
@@ -133,28 +140,55 @@ The game automatically detects mobile devices and:
 
 ## 🎨 Sprite System
 
-### Current Implementation (POC)
-The POC generates spritesheets programmatically using HTML5 Canvas for demonstration purposes. This allows the game to run without external asset files.
+### PNG-Based Assets
+All sprites are **pre-generated PNG files** stored in `assets/` directory:
 
-### Production Implementation
-For a production game, replace the procedural generation in `preload.js` with actual sprite loading:
-
-```javascript
-// Replace createPlayerSpritesheet() with:
-this.load.spritesheet('player', 'assets/spritesheets/player.png', {
-    frameWidth: 32,
-    frameHeight: 48
-});
-
-// Replace createUISprites() with:
-this.load.spritesheet('ui-buttons', 'assets/spritesheets/ui.png', {
-    frameWidth: 64,
-    frameHeight: 64
-});
+```
+assets/
+├── spritesheets/          # Multi-frame spritesheets
+│   ├── character.png      # 65-frame character (2080x48px)
+│   ├── ui-buttons.png     # 7-frame UI buttons (448x64px)
+│   └── popup-buttons.png  # 2-frame popup buttons (180x50px)
+└── images/                # Single images
+    ├── stage1-bg.png      # Stage 1 background (800x600px)
+    ├── stage2-bg.png      # Stage 2 background (800x600px)
+    ├── stage3-bg.png      # Stage 3 background (800x600px)
+    ├── popup-bg.png       # Popup background (500x300px)
+    ├── square-doll.png    # Square doll sprite (50x50px)
+    └── interstitial.png   # Interstitial screen (800x600px)
 ```
 
+### Generating Sprites
+
+To regenerate all PNG assets:
+
+```bash
+npm run generate-sprites
+```
+
+This runs `scripts/generate-sprites.js` which creates all spritesheets and images.
+
+### Customizing Sprites
+
+**Option 1:** Edit the generation script
+```bash
+# Edit scripts/generate-sprites.js to change colors, sizes, etc.
+npm run generate-sprites
+```
+
+**Option 2:** Edit PNG files directly
+- Use any image editor (GIMP, Photoshop, Aseprite, etc.)
+- Maintain frame sizes for spritesheets
+
+**Option 3:** Replace with your own art
+- Create PNG files with matching dimensions
+- Update file paths in `js/preload.js` if needed
+
+See `SPRITES.md` for detailed sprite documentation.
+
 ### Spritesheet Layout
-**Player Spritesheet** (32x48 pixels per frame):
+
+**Character Spritesheet** (`character.png` - 32x48px per frame):
 - Frame 0: Standing
 - Frames 1-8: Walking down
 - Frames 9-16: Walking left
@@ -165,7 +199,7 @@ this.load.spritesheet('ui-buttons', 'assets/spritesheets/ui.png', {
 - Frames 49-56: Jumping right
 - Frames 57-64: Jumping up
 
-**UI Spritesheet** (64x64 pixels per frame):
+**UI Buttons Spritesheet** (`ui-buttons.png` - 64x64px per frame):
 - Frame 0: Menu button (hamburger)
 - Frame 1: Sound button (speaker)
 - Frame 2: D-pad up

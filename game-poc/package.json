@@ -10,7 +10,8 @@
     "start": "npx http-server . -p 8080 -o",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "generate-sprites": "node scripts/generate-sprites.js"
   },
   "keywords": [
     "game",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "canvas": "^3.2.1",
     "jest": "^30.2.0"
   }
 }
