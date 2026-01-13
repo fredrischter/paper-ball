@@ -68,8 +68,6 @@ function createPlayerSpritesheet(scene) {
     // Walking frames
     for (let dir = 0; dir < 4; dir++) {
         for (let i = 0; i < framesPerAnimation; i++) {
-            const col = i;
-            const row = directions[dir].row;
             const x = (1 + dir * framesPerAnimation + i) * frameWidth;
             const y = 0;
             const legOffset = Math.sin(i / framesPerAnimation * Math.PI * 2) * 2;

@@ -55,7 +55,7 @@ function updatePlayerAnimation() {
     }
     
     // Walking animations
-    if (player.body.velocity.x !== 0 || player.body.velocity.y !== 0) {
+    if (player.body.velocity.x !== 0) {
         const walkAnim = `walk-${currentDirection}`;
         if (player.anims.currentAnim?.key !== walkAnim) {
             player.anims.play(walkAnim, true);
