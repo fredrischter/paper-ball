@@ -31,7 +31,7 @@ jobs:
       uses: android-actions/setup-android@v3
     
     - name: Install dependencies
-      run: npm ci || npm install
+      run: npm ci
     
     - name: Build web assets
       run: npm run build
@@ -56,6 +56,8 @@ jobs:
         retention-days: 30
     
     - name: Build Android Release APK (unsigned)
+      # Note: This step may fail if signing keys are not configured
+      # The unsigned APK is still useful for testing purposes
       run: cd android && ./gradlew assembleRelease --no-daemon
       continue-on-error: true
     
