@@ -52,10 +52,17 @@ A proof of concept for an HTML5 game with animated sprite character, demonstrati
 
 ## 🚀 How to Run
 
-### Option 1: Direct Browser Access
+### Option 1: Direct Browser Access (Recommended)
 Simply open `index.html` in any modern web browser.
 
-### Option 2: Local Server (Recommended)
+**No external dependencies required!** The default version (`index.html`) uses pure JavaScript/Canvas with procedurally generated sprites.
+
+### Option 2: Phaser 3 Version
+Open `index-phaser.html` for the Phaser 3 game engine version (requires internet connection to load Phaser from CDN).
+
+### Option 3: Local Server
+For testing advanced features or avoiding CORS issues:
+
 ```bash
 # Using Python 3
 python -m http.server 8080
@@ -69,7 +76,7 @@ php -S localhost:8080
 
 Then navigate to `http://localhost:8080`
 
-### Option 3: Live Server (VS Code)
+### Option 4: Live Server (VS Code)
 If using Visual Studio Code:
 1. Install the "Live Server" extension
 2. Right-click on `index.html`
@@ -77,36 +84,54 @@ If using Visual Studio Code:
 
 ## 🎯 Technical Implementation
 
-### Game Engine
+### Game Engine Options
+
+This POC includes two implementations:
+
+#### 1. Pure JavaScript/Canvas Version (Default - `index.html`)
+- **No external dependencies** - works offline
+- Procedurally generated sprites using Canvas API
+- Custom animation system
+- Web Audio API for sound
+- ~15KB of JavaScript code
+- Works in any modern browser without internet
+
+#### 2. Phaser 3 Version (`index-phaser.html`)
 - **Phaser 3** (v3.70.0) - Loaded via CDN
 - Industry-standard HTML5 game framework
 - Built-in physics, animations, and input handling
 - Excellent mobile support
+- Requires internet connection to load Phaser library
 
 ### Architecture
 ```
 game-poc/
-├── index.html              # Main HTML file
-├── requirements.txt        # Detailed requirements document
-├── README.md              # This file
+├── index.html                 # Pure JS/Canvas version (main)
+├── index-phaser.html          # Phaser 3 version
+├── requirements.txt           # Detailed requirements document
+├── README.md                  # This file
 ├── js/
-│   ├── config.js          # Game configuration and state
-│   ├── preload.js         # Asset loading and generation
-│   ├── create.js          # Game initialization
-│   ├── update.js          # Game loop
-│   └── game.js            # Main game initialization
+│   ├── game-standalone.js     # Pure JS game implementation
+│   ├── game-all.js           # Combined Phaser scripts
+│   ├── config.js             # Phaser: Game configuration
+│   ├── preload.js            # Phaser: Asset loading
+│   ├── create.js             # Phaser: Game initialization
+│   ├── update.js             # Phaser: Game loop
+│   └── game.js               # Phaser: Main initialization
 └── assets/
-    ├── spritesheets/      # (Placeholder for sprite assets)
-    └── audio/             # (Placeholder for audio assets)
+    ├── spritesheets/         # (Placeholder for sprite assets)
+    └── audio/                # (Placeholder for audio assets)
 ```
 
 ### Code Structure
-The game is split into modular JavaScript files:
-- **config.js** - Configuration, constants, and global state
-- **preload.js** - Asset loading and procedural sprite generation
-- **create.js** - Scene setup, UI creation, and animation definitions
-- **update.js** - Game loop and player input handling
-- **game.js** - Game initialization
+
+#### Pure JavaScript Version
+The standalone game uses a class-based architecture:
+- **Player class** - Character with animation state machine
+- **Animation class** - Frame-based animation system
+- **Procedural sprite generation** - Creates sprites at runtime
+- **Game loop** - requestAnimationFrame-based rendering
+- **Input system** - Keyboard and touch event handling
 
 ## 📱 Mobile Support
 
