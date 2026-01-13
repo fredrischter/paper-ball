@@ -1,7 +1,7 @@
 {
   "appId": "com.paperball.game",
   "appName": "Bola de Papel",
-  "webDir": ".",
+  "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"

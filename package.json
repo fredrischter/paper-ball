@@ -5,9 +5,17 @@
   "main": "index.html",
   "scripts": {
     "start": "npx http-server . -p 8080 -o",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\" && exit 0",
+    "build": "node -e \"const fs=require('fs');const path=require('path');if(!fs.existsSync('www'))fs.mkdirSync('www');fs.copyFileSync('index.html',path.join('www','index.html'));fs.copyFileSync('game.js',path.join('www','game.js'));fs.copyFileSync('style.css',path.join('www','style.css'));fs.copyFileSync('manifest.json',path.join('www','manifest.json'));\"",
+    "android:build-debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
+    "android:build-release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease"
   },
   "keywords": ["game", "html5", "physics", "multiplatform"],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0"
+  }
 }
