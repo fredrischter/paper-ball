@@ -130,9 +130,9 @@ function createUISprites(scene) {
     // Up arrow
     ctx.fillStyle = '#FFF';
     ctx.beginPath();
-    ctx.moveTo(dpadX + 32, dpadX + 15);
-    ctx.lineTo(dpadX + 42, dpadX + 25);
-    ctx.lineTo(dpadX + 22, dpadX + 25);
+    ctx.moveTo(dpadX + 32, 15);
+    ctx.lineTo(dpadX + 42, 25);
+    ctx.lineTo(dpadX + 22, 25);
     ctx.fill();
     
     // Down arrow
@@ -141,9 +141,9 @@ function createUISprites(scene) {
     ctx.fillRect(dpadX2, 0, buttonSize, buttonSize);
     ctx.fillStyle = '#FFF';
     ctx.beginPath();
-    ctx.moveTo(dpadX2 + 32, dpadX2 + 49);
-    ctx.lineTo(dpadX2 + 22, dpadX2 + 39);
-    ctx.lineTo(dpadX2 + 42, dpadX2 + 39);
+    ctx.moveTo(dpadX2 + 32, 49);
+    ctx.lineTo(dpadX2 + 22, 39);
+    ctx.lineTo(dpadX2 + 42, 39);
     ctx.fill();
     
     // Left arrow
