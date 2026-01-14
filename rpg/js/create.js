@@ -1,28 +1,10 @@
 function create() {
-    // Add stage background
+    // Add stage backgrounds
     stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
     stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
     stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
     
-    // Create player sprite with Matter physics (heavier mass)
-    player = this.matter.add.sprite(400, 300, 'player', 0);
-    player.setFriction(0.1);
-    player.setMass(10); // Heavier mass so it can push the squares
-    player.setFixedRotation(); // Prevent rotation
-    
-    // Store scene reference for later use
-    player.scene = this;
-    
-    // Create animations
-    createAnimations(this);
-    
-    // Create particle systems
-    createParticleSystems(this);
-    
-    // Create square dolls for current stage
-    createSquareDollsForStage(this, 1);
-    
-    // Set up keyboard input
+    // Set up keyboard input first (needed for RPG)
     cursors = this.input.keyboard.createCursorKeys();
     jumpButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     
@@ -34,20 +16,14 @@ function create() {
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
     };
     
-    // Set up collision detection for sparks
-    this.matter.world.on('collisionstart', function(event) {
-        event.pairs.forEach(pair => {
-            // Check if player hit a doll
-            const { bodyA, bodyB } = pair;
-            if ((bodyA.gameObject === player && squareDolls.includes(bodyB.gameObject)) ||
-                (bodyB.gameObject === player && squareDolls.includes(bodyA.gameObject))) {
-                // Emit sparks at collision point
-                const hitX = (bodyA.position.x + bodyB.position.x) / 2;
-                const hitY = (bodyA.position.y + bodyB.position.y) / 2;
-                emitCollisionSparks(hitX, hitY);
-            }
-        });
-    });
+    // Initialize RPG-specific features
+    // Player will be created during world setup
+    
+    // Create animations
+    createAnimations(this);
+    
+    // Start RPG flow with opening dialog
+    initializeRPG(this);
     
     // Create UI elements
     createUI(this);

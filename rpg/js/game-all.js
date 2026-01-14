@@ -1,48 +1,3 @@
-// Boot Scene - Shows loading screen while assets load
-class BootScene extends Phaser.Scene {
-    constructor() {
-        super({ key: 'BootScene' });
-
-    preload() {
-        const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
-
-        this.add.rectangle(width / 2, height / 2, width, height, 0x2d5016);
-        const loadingText = this.add.text(width / 2, height / 2 - 50, 'Loading...', {
-            font: '32px Arial',
-            fill: '#ffffff'
-
-        const progressBarBg = this.add.rectangle(width / 2, height / 2 + 20, 400, 30, 0x555555);
-        const progressBar = this.add.rectangle(width / 2 - 200, height / 2 + 20, 0, 26, 0xffffff);
-        progressBar.setOrigin(0, 0.5);
-
-        const progressText = this.add.text(width / 2, height / 2 + 60, '0%', {
-            font: '20px Arial',
-            fill: '#ffffff'
-
-        this.load.on('progress', (value) => {
-            progressBar.width = 400 * value;
-            progressText.setText(Math.floor(value * 100) + '%');
-
-        this.load.on('complete', () => {
-            loadingText.setText('Ready!');
-            setTimeout(() => {
-                this.scene.start('GameScene');
-
-        preload.call(this);
-}
-
-class GameScene extends Phaser.Scene {
-    constructor() {
-        super({ key: 'GameScene' });
-
-    create() {
-        create.call(this);
-
-    update() {
-        update.call(this);
-}
-
 // Game configuration
 const gameConfig = {
     type: Phaser.AUTO,
@@ -54,12 +9,19 @@ const gameConfig = {
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: 800,
         height: 600
+    },
     physics: {
         default: 'matter',
         matter: {
             gravity: { y: 0 }, // No gravity as requested
             debug: false
-    scene: [BootScene, GameScene] // OLD: {
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
 };
 
 // Game state variables
@@ -114,16 +76,19 @@ function preload() {
     this.load.spritesheet('player', 'assets/spritesheets/character.png', {
         frameWidth: 32,
         frameHeight: 48
+    });
     
     // Load UI buttons spritesheet (7 frames: menu, sound, dpad-up, dpad-down, dpad-left, dpad-right, action)
     this.load.spritesheet('ui-buttons', 'assets/spritesheets/ui-buttons.png', {
         frameWidth: 64,
         frameHeight: 64
+    });
     
     // Load popup buttons spritesheet (2 frames: OK, Cancel)
     this.load.spritesheet('popup-buttons', 'assets/spritesheets/popup-buttons.png', {
         frameWidth: 90,
         frameHeight: 50
+    });
     
     // Load stage backgrounds
     this.load.image('bg-stage1', 'assets/images/stage1-bg.png');
@@ -152,30 +117,12 @@ function preload() {
     // In production, you could load: this.load.audio('bgmusic', 'assets/audio/background.mp3');
 }
 function create() {
-    // Add stage background
+    // Add stage backgrounds
     stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
     stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
     stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
     
-    // Create player sprite with Matter physics (heavier mass)
-    player = this.matter.add.sprite(400, 300, 'player', 0);
-    player.setFriction(0.1);
-    player.setMass(10); // Heavier mass so it can push the squares
-    player.setFixedRotation(); // Prevent rotation
-    
-    // Store scene reference for later use
-    player.scene = this;
-    
-    // Create animations
-    createAnimations(this);
-    
-    // Create particle systems
-    createParticleSystems(this);
-    
-    // Create square dolls for current stage
-    createSquareDollsForStage(this, 1);
-    
-    // Set up keyboard input
+    // Set up keyboard input first (needed for RPG)
     cursors = this.input.keyboard.createCursorKeys();
     jumpButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     
@@ -185,18 +132,16 @@ function create() {
         A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+    };
     
-    // Set up collision detection for sparks
-    this.matter.world.on('collisionstart', function(event) {
-        event.pairs.forEach(pair => {
-            // Check if player hit a doll
-            const { bodyA, bodyB } = pair;
-            if ((bodyA.gameObject === player && squareDolls.includes(bodyB.gameObject)) ||
-                (bodyB.gameObject === player && squareDolls.includes(bodyA.gameObject))) {
-                // Emit sparks at collision point
-                const hitX = (bodyA.position.x + bodyB.position.x) / 2;
-                const hitY = (bodyA.position.y + bodyB.position.y) / 2;
-                emitCollisionSparks(hitX, hitY);
+    // Initialize RPG-specific features
+    // Player will be created during world setup
+    
+    // Create animations
+    createAnimations(this);
+    
+    // Start RPG flow with opening dialog
+    initializeRPG(this);
     
     // Create UI elements
     createUI(this);
@@ -216,6 +161,7 @@ function createParticleSystems(scene) {
         frequency: 80,
         emitting: false,
         blendMode: 'ADD'
+    });
     smokeParticles.setDepth(5);
     
     // Spark particles - emit when hitting blocks
@@ -228,6 +174,7 @@ function createParticleSystems(scene) {
         gravityY: 0,
         emitting: false,
         blendMode: 'ADD'
+    });
     sparkParticles.setDepth(100);
     
     // Celebration particles - shower when level completes
@@ -241,6 +188,7 @@ function createParticleSystems(scene) {
         rotate: { min: 0, max: 360 },
         emitting: false,
         blendMode: 'NORMAL'
+    });
     celebrationParticles.setDepth(200);
 }
 
@@ -273,6 +221,7 @@ function startCelebration(scene) {
             quantity: 3,
             frequency: 50,
             blendMode: 'NORMAL'
+        });
         emitter.setDepth(200);
         
         // Stop after 2 seconds
@@ -280,6 +229,9 @@ function startCelebration(scene) {
             emitter.stop();
             scene.time.delayedCall(2500, () => {
                 emitter.destroy();
+            });
+        });
+    }
 }
 
 function createAnimations(scene) {
@@ -288,6 +240,7 @@ function createAnimations(scene) {
         key: 'stand',
         frames: [{ key: 'player', frame: 0 }],
         frameRate: 10
+    });
     
     // Walking animations (8 frames each)
     const directions = ['down', 'left', 'right', 'up'];
@@ -298,8 +251,11 @@ function createAnimations(scene) {
             frames: scene.anims.generateFrameNumbers('player', { 
                 start: 1 + index * 8, 
                 end: 1 + index * 8 + 7 
+            }),
             frameRate: 10,
             repeat: -1
+        });
+    });
     
     // Jumping animations (8 frames each)
     directions.forEach((dir, index) => {
@@ -308,8 +264,11 @@ function createAnimations(scene) {
             frames: scene.anims.generateFrameNumbers('player', { 
                 start: 33 + index * 8, 
                 end: 33 + index * 8 + 7 
+            }),
             frameRate: 10,
             repeat: 0
+        });
+    });
 }
 
 function createUI(scene) {
@@ -322,6 +281,7 @@ function createUI(scene) {
     menuButton.on('pointerdown', () => {
         console.log('Menu clicked');
         alert('Menu\n\nControls:\n- Arrow keys or WASD to move\n- Space to jump\n- Click sound button to toggle music');
+    });
     
     // Top-right: Sound button
     soundButton = scene.add.sprite(760, 40, 'ui-buttons', 1)
@@ -332,6 +292,7 @@ function createUI(scene) {
     soundButton.on('pointerdown', () => {
         toggleSound();
         updateSoundButton();
+    });
     
     // Middle-top: Score/title text
     const titleText = scene.add.text(400, 30, 'Game POC - Character Demo', {
@@ -339,6 +300,7 @@ function createUI(scene) {
         fill: '#fff',
         stroke: '#000',
         strokeThickness: 4
+    }).setOrigin(0.5, 0).setScrollFactor(0);
     
     // Middle-bottom: Instructions text
     const instructionsText = scene.add.text(400, 560, 
@@ -348,10 +310,12 @@ function createUI(scene) {
             fill: '#fff',
             stroke: '#000',
             strokeThickness: 3
+        }).setOrigin(0.5, 0).setScrollFactor(0);
     
     // Mobile controls
     if (isMobile) {
         createMobileControls(scene);
+    }
 }
 
 function createMobileControls(scene) {
@@ -410,9 +374,11 @@ function createMobileControls(scene) {
         fontSize: '14px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setScrollFactor(0);
     
     actionButton.on('pointerdown', () => {
         mobileJumpPressed = true;
+    });
 }
 
 function initSound(scene) {
@@ -446,22 +412,29 @@ function initSound(scene) {
             // Loop
             if (soundEnabled) {
                 setTimeout(window.playBackgroundMusic, 2000);
+            }
+        };
         
         if (soundEnabled) {
             window.playBackgroundMusic();
+        }
+    } catch (e) {
         console.log('Web Audio API not supported');
+    }
 }
 
 function toggleSound() {
     soundEnabled = !soundEnabled;
     if (soundEnabled && window.playBackgroundMusic) {
         window.playBackgroundMusic();
+    }
 }
 
 function updateSoundButton() {
     // Visual feedback for sound state
     if (soundButton) {
         soundButton.setAlpha(soundEnabled ? 1.0 : 0.5);
+    }
 }
 
 function showPopup(scene) {
@@ -480,10 +453,12 @@ function showPopup(scene) {
         fontSize: '32px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1002);
     
     const messageText = scene.add.text(400, 260, 'You went off the left edge!', {
         fontSize: '20px',
         fill: '#ccc'
+    }).setOrigin(0.5).setDepth(1002);
     
     // Create OK button
     const okButton = scene.add.sprite(300, 360, 'popup-buttons', 0)
@@ -495,6 +470,7 @@ function showPopup(scene) {
         fontSize: '20px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
     
     // Create Cancel button
     const cancelButton = scene.add.sprite(500, 360, 'popup-buttons', 1)
@@ -506,6 +482,7 @@ function showPopup(scene) {
         fontSize: '20px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
     
     // Store popup elements
     popupOverlay = {
@@ -517,6 +494,7 @@ function showPopup(scene) {
         okText,
         cancelButton,
         cancelText
+    };
     
     // Close popup function
     const closePopup = () => {
@@ -537,6 +515,7 @@ function showPopup(scene) {
         
         // Reset game to beginning
         resetGame(scene);
+    };
     
     // Button event handlers
     okButton.on('pointerdown', closePopup);
@@ -585,6 +564,8 @@ function switchToStage(scene, stageNumber) {
             // Remove old square dolls and create new ones for stage 2
             destroySquareDolls();
             createSquareDollsForStage(scene, 2);
+        });
+    } else if (stageNumber === 3) {
         // Trigger celebration for completing stage 2
         startCelebration(scene);
         
@@ -592,6 +573,8 @@ function switchToStage(scene, stageNumber) {
         scene.time.delayedCall(2000, () => {
             // Show interstitial
             showInterstitial(scene);
+        });
+    }
 }
 
 function createSquareDollsForStage(scene, stage) {
@@ -611,12 +594,15 @@ function createSquareDollsForStage(scene, stage) {
         doll.setFixedRotation(); // Prevent rotation
         
         squareDolls.push(doll);
+    });
 }
 
 function destroySquareDolls() {
     squareDolls.forEach(doll => {
         if (doll && doll.scene) {
             doll.destroy();
+        }
+    });
     squareDolls = [];
 }
 
@@ -628,56 +614,58 @@ function showInterstitial(scene) {
     scene.time.delayedCall(3000, () => {
         interstitial.destroy();
         resetGame(scene);
+    });
 }
 function update() {
-    if (!player || popupActive) return;
+    // RPG-specific update logic
+    updateRPG(this);
     
-    // Check for edge exits
-    if (player.x < -20) {
-        // Player exited left - show popup
-        showPopup(this);
+    // Only handle player movement if in world or interior state
+    if (currentRPGState !== RPGStates.WORLD && currentRPGState !== RPGStates.INTERIOR) {
         return;
-        // Player exited right - switch stage
-        if (currentStage === 1) {
-            switchToStage(this, 2);
-            switchToStage(this, 3);
-        return;
+    }
     
-    // Check for jump button press (keyboard or mobile)
-    const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
-    if (jumpPressed && !isJumping) {
-        performJump();
-    
-    // Reset mobile jump flag
-    if (mobileJumpPressed) {
-        mobileJumpPressed = false;
+    if (!player || !player.body) return;
     
     // Get input from keyboard or mobile controls
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
-    const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
-    const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
     
-    // Movement speed (faster during jump)
-    const speed = isJumping ? 5 : 3;
+    // Movement speed
+    const speed = 200; // pixels per second
     
-    // Apply forces for movement (top-down style with no gravity)
+    // Horizontal movement (side-scrolling style)
     if (leftPressed) {
         player.setVelocityX(-speed);
         currentDirection = 'left';
+        if (player.anims) {
+            player.anims.play('walk-left', true);
+        }
+    } else if (rightPressed) {
         player.setVelocityX(speed);
         currentDirection = 'right';
-        player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
+        if (player.anims) {
+            player.anims.play('walk-right', true);
+        }
+    } else {
+        player.setVelocityX(0);
+        if (player.anims && !player.anims.isPlaying) {
+            player.anims.play(`stand-${currentDirection}`, true);
+        }
+    }
     
-    if (upPressed) {
-        player.setVelocityY(-speed);
-        currentDirection = 'up';
-        player.setVelocityY(speed);
-        currentDirection = 'down';
-        player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
+    // Jump mechanic (only in world mode with gravity)
+    if (currentRPGState === RPGStates.WORLD) {
+        const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
+        if (jumpPressed && Math.abs(player.body.velocity.y) < 0.5) {
+            player.setVelocityY(-10); // Jump force
+        }
+    }
     
-    // Update animations
-    updatePlayerAnimation();
+    // Reset mobile jump flag
+    if (mobileJumpPressed) {
+        mobileJumpPressed = false;
+    }
 }
 
 function performJump() {
@@ -691,6 +679,7 @@ function performJump() {
     // Reset jumping state after animation completes
     const resetJump = () => {
         isJumping = false;
+    };
     
     player.once('animationcomplete', resetJump);
     
@@ -698,6 +687,8 @@ function performJump() {
     setTimeout(() => {
         if (isJumping) {
             isJumping = false;
+        }
+    }, 1000); // 8 frames at 10fps = 800ms, so 1000ms is safe
 }
 
 function updatePlayerAnimation() {
@@ -717,24 +708,570 @@ function updatePlayerAnimation() {
             smokeParticles.startFollow(player, 0, 10); // Follow player with offset below
             if (!smokeParticles.emitting) {
                 smokeParticles.start();
+            }
+        } else {
             // Stop emitting when standing still
             if (smokeParticles.emitting) {
                 smokeParticles.stop();
+            }
+        }
+    }
     
     // Walking animations
     if (isMoving) {
         const walkAnim = `walk-${currentDirection}`;
         if (player.anims.currentAnim?.key !== walkAnim) {
             player.anims.play(walkAnim, true);
+        }
+    } else {
         // Standing
         if (player.anims.currentAnim?.key !== 'stand') {
             player.anims.play('stand', true);
+        }
+    }
 }
-// Initialize the Phaser game
-const game = new Phaser.Game(gameConfig);
+// RPG Implementation - Complete dialog, character customization, and NPC system
+// This file contains the full RPG variant implementation
 
-// Log game info
-console.log('Game POC initialized');
-console.log('Phaser version:', Phaser.VERSION);
-console.log('Controls: Arrow keys or WASD to move, Space to jump');
-console.log('Mobile: Use on-screen D-pad and action button');
+// ============================================================================
+// RPG GAME STATE MANAGEMENT
+// ============================================================================
+
+const RPGStates = {
+    OPENING_DIALOG: 'opening_dialog',
+    CHARACTER_SELECT: 'character_select',
+    CLOTHING_SELECT: 'clothing_select',
+    WORLD: 'world',
+    INTERIOR: 'interior',
+    NPC_DIALOG: 'npc_dialog'
+};
+
+let currentRPGState = RPGStates.OPENING_DIALOG;
+let dialogIndex = 0;
+let selectedCharacter = 0; // 0-2 for different character types
+let selectedClothing = 0; // 0-2 for different clothing styles
+let currentHouse = null;
+let nearNPC = null;
+
+// ============================================================================
+// DIALOG SYSTEM
+// ============================================================================
+
+const openingDialogs = [
+    {
+        text: "Welcome to the village of Pixelton...",
+        background: 'bg-stage1' // Forest scene
+    },
+    {
+        text: "A mysterious phenomenon has occurred in the land.",
+        background: 'bg-stage2' // Mountain scene
+    },
+    {
+        text: "You must uncover the truth. Choose your hero!",
+        background: 'bg-stage1' // Back to forest
+    }
+];
+
+const npcDialogs = {
+    elder: [
+        { text: "Greetings, traveler. Welcome to my humble home.", background: 'interior-1' },
+        { text: "Dark forces are stirring in the east...", background: 'interior-1' },
+        { text: "Be careful on your journey.", background: 'interior-1' }
+    ],
+    merchant: [
+        { text: "Looking to trade? I have rare items!", background: 'interior-2' },
+        { text: "Come back anytime, friend.", background: 'interior-2' }
+    ]
+};
+
+// ============================================================================
+// DIALOG BOX RENDERING
+// ============================================================================
+
+function createDialogBox(scene) {
+    const dialogBox = scene.add.graphics();
+    dialogBox.fillStyle(0x000000, 0.8);
+    dialogBox.fillRect(50, 450, 700, 120);
+    dialogBox.lineStyle(4, 0xffffff);
+    dialogBox.strokeRect(50, 450, 700, 120);
+    dialogBox.setDepth(1000);
+    dialogBox.setScrollFactor(0); // Fixed to camera
+    return dialogBox;
+}
+
+function createDialogText(scene, text) {
+    const dialogText = scene.add.text(70, 470, text, {
+        font: '20px Arial',
+        fill: '#ffffff',
+        wordWrap: { width: 660 }
+    });
+    dialogText.setDepth(1001);
+    dialogText.setScrollFactor(0); // Fixed to camera
+    return dialogText;
+}
+
+function showDialog(scene, dialogData) {
+    // Change background if specified
+    if (dialogData.background) {
+        changeBackground(scene, dialogData.background);
+    }
+    
+    // Create or update dialog box
+    if (!scene.dialogBox) {
+        scene.dialogBox = createDialogBox(scene);
+        scene.dialogText = createDialogText(scene, dialogData.text);
+    } else {
+        scene.dialogText.setText(dialogData.text);
+    }
+    
+    // Show continue indicator
+    if (!scene.continueText) {
+        scene.continueText = scene.add.text(720, 550, 'Press SPACE to continue', {
+            font: '14px Arial',
+            fill: '#aaaaaa'
+        });
+        scene.continueText.setDepth(1002);
+        scene.continueText.setScrollFactor(0);
+    }
+}
+
+function hideDialog(scene) {
+    if (scene.dialogBox) {
+        scene.dialogBox.destroy();
+        scene.dialogBox = null;
+    }
+    if (scene.dialogText) {
+        scene.dialogText.destroy();
+        scene.dialogText = null;
+    }
+    if (scene.continueText) {
+        scene.continueText.destroy();
+        scene.continueText = null;
+    }
+}
+
+// ============================================================================
+// CHARACTER SELECTION SCREEN
+// ============================================================================
+
+function showCharacterSelect(scene) {
+    hideDialog(scene);
+    
+    // Create character selection UI
+    scene.add.text(400, 100, 'Choose Your Character', {
+        font: 'bold 32px Arial',
+        fill: '#ffffff'
+    }).setOrigin(0.5).setScrollFactor(0);
+    
+    const characterTypes = [
+        { name: 'Warrior', x: 200 },
+        { name: 'Mage', x: 400 },
+        { name: 'Rogue', x: 600 }
+    ];
+    
+    scene.characterButtons = [];
+    characterTypes.forEach((char, index) => {
+        const button = scene.add.rectangle(char.x, 300, 150, 200, 0x4444ff);
+        button.setInteractive();
+        button.setScrollFactor(0);
+        
+        const label = scene.add.text(char.x, 420, char.name, {
+            font: '20px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5).setScrollFactor(0);
+        
+        button.on('pointerdown', () => {
+            selectedCharacter = index;
+            transitionToClothingSelect(scene);
+        });
+        
+        scene.characterButtons.push({ button, label });
+    });
+}
+
+function transitionToClothingSelect(scene) {
+    // Clean up character select
+    scene.characterButtons.forEach(item => {
+        item.button.destroy();
+        item.label.destroy();
+    });
+    
+    currentRPGState = RPGStates.CLOTHING_SELECT;
+    showClothingSelect(scene);
+}
+
+// ============================================================================
+// CLOTHING SELECTION SCREEN
+// ============================================================================
+
+function showClothingSelect(scene) {
+    scene.add.text(400, 100, 'Choose Your Style', {
+        font: 'bold 32px Arial',
+        fill: '#ffffff'
+    }).setOrigin(0.5).setScrollFactor(0);
+    
+    const clothingTypes = [
+        { name: 'Light Armor', x: 200 },
+        { name: 'Heavy Armor', x: 400 },
+        { name: 'Casual', x: 600 }
+    ];
+    
+    scene.clothingButtons = [];
+    clothingTypes.forEach((cloth, index) => {
+        const button = scene.add.rectangle(cloth.x, 300, 150, 200, 0x44ff44);
+        button.setInteractive();
+        button.setScrollFactor(0);
+        
+        const label = scene.add.text(cloth.x, 420, cloth.name, {
+            font: '20px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5).setScrollFactor(0);
+        
+        button.on('pointerdown', () => {
+            selectedClothing = index;
+            transitionToWorld(scene);
+        });
+        
+        scene.clothingButtons.push({ button, label });
+    });
+}
+
+function transitionToWorld(scene) {
+    // Clean up clothing select
+    scene.clothingButtons.forEach(item => {
+        item.button.destroy();
+        item.label.destroy();
+    });
+    
+    // Clear any remaining text
+    scene.children.list.forEach(child => {
+        if (child.type === 'Text' && child.scrollFactorX === 0) {
+            child.destroy();
+        }
+    });
+    
+    currentRPGState = RPGStates.WORLD;
+    setupWorld(scene);
+}
+
+// ============================================================================
+// WORLD SETUP (Side-scrolling explorable map)
+// ============================================================================
+
+function setupWorld(scene) {
+    // Change to world background
+    changeBackground(scene, 'bg-stage1');
+    
+    // Create extended world bounds
+    scene.matter.world.setBounds(0, 0, 4000, 600);
+    scene.cameras.main.setBounds(0, 0, 4000, 600);
+    
+    // Create player if not exists
+    if (!player) {
+        player = scene.matter.add.sprite(200, 400, 'player', 0);
+        player.setFriction(0.1);
+        player.setMass(10);
+        player.setFixedRotation();
+        player.scene = scene;
+    } else {
+        player.setPosition(200, 400);
+        player.setVelocity(0, 0);
+    }
+    
+    // Camera follows player
+    scene.cameras.main.startFollow(player, true, 0.1, 0.1);
+    
+    // Create ground platform
+    const ground = scene.matter.add.rectangle(2000, 580, 4000, 40, {
+        isStatic: true,
+        friction: 1
+    });
+    
+    // Create houses
+    createHouses(scene);
+    
+    // Enable gravity for world mode
+    scene.matter.world.setGravity(0, 1);
+    
+    // Show instructions
+    const instructions = scene.add.text(400, 50, 'Arrow keys to move, UP at door to enter house', {
+        font: '16px Arial',
+        fill: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 }
+    }).setScrollFactor(0).setDepth(100);
+    
+    scene.time.delayedCall(5000, () => {
+        if (instructions) instructions.destroy();
+    });
+}
+
+// ============================================================================
+// HOUSE SYSTEM
+// ============================================================================
+
+const houses = [
+    { x: 800, y: 500, npc: 'elder', doorY: 480 },
+    { x: 1600, y: 500, npc: 'merchant', doorY: 480 },
+    { x: 2800, y: 500, npc: 'elder', doorY: 480 }
+];
+
+function createHouses(scene) {
+    scene.houses = [];
+    houses.forEach((houseData, index) => {
+        // House structure (brown rectangle)
+        const house = scene.add.rectangle(houseData.x, houseData.y, 200, 150, 0x8b4513);
+        house.setStrokeStyle(4, 0x000000);
+        
+        // Door (darker brown rectangle)
+        const door = scene.add.rectangle(houseData.x, houseData.doorY, 50, 80, 0x654321);
+        door.setStrokeStyle(2, 0x000000);
+        
+        // Door marker
+        const doorText = scene.add.text(houseData.x, houseData.doorY - 60, '↓ DOOR', {
+            font: 'bold 14px Arial',
+            fill: '#ffff00',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 2 }
+        }).setOrigin(0.5);
+        
+        scene.houses.push({
+            data: houseData,
+            structure: house,
+            door: door,
+            marker: doorText,
+            index: index
+        });
+    });
+}
+
+function checkHouseProximity(scene) {
+    if (currentRPGState !== RPGStates.WORLD) return;
+    
+    currentHouse = null;
+    scene.houses.forEach(house => {
+        const dist = Phaser.Math.Distance.Between(player.x, player.y, house.data.x, house.data.doorY);
+        if (dist < 60) {
+            currentHouse = house;
+            house.marker.setVisible(true);
+        } else {
+            house.marker.setVisible(false);
+        }
+    });
+}
+
+function enterHouse(scene) {
+    if (!currentHouse) return;
+    
+    currentRPGState = RPGStates.INTERIOR;
+    
+    // Change to interior view
+    changeBackground(scene, 'bg-stage2'); // Brown background for interior
+    
+    // Hide player temporarily
+    player.setVisible(false);
+    
+    // Stop camera follow
+    scene.cameras.main.stopFollow();
+    scene.cameras.main.setScroll(0, 0);
+    
+    // Create interior elements
+    showInterior(scene, currentHouse);
+}
+
+// ============================================================================
+// INTERIOR SYSTEM
+// ============================================================================
+
+function showInterior(scene, house) {
+    // Interior title
+    scene.interiorTitle = scene.add.text(400, 50, `Inside the ${house.data.npc}'s House`, {
+        font: 'bold 24px Arial',
+        fill: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 }
+    }).setOrigin(0.5).setScrollFactor(0);
+    
+    // Create NPC
+    const npcX = 400;
+    const npcY = 300;
+    scene.npc = scene.add.rectangle(npcX, npcY, 40, 60, 0xff00ff);
+    scene.npc.setStrokeStyle(2, 0x000000);
+    scene.npc.npcType = house.data.npc;
+    
+    // NPC label
+    scene.npcLabel = scene.add.text(npcX, npcY - 50, house.data.npc.toUpperCase(), {
+        font: 'bold 16px Arial',
+        fill: '#ffff00'
+    }).setOrigin(0.5);
+    
+    // Show player in interior
+    player.setPosition(200, 400);
+    player.setVisible(true);
+    player.setVelocity(0, 0);
+    
+    // Exit door
+    scene.exitDoor = scene.add.rectangle(100, 500, 60, 100, 0x654321);
+    scene.exitDoor.setStrokeStyle(3, 0x000000);
+    
+    scene.exitText = scene.add.text(100, 440, '↑ EXIT', {
+        font: 'bold 14px Arial',
+        fill: '#00ff00',
+        backgroundColor: '#000000',
+        padding: { x: 5, y: 2 }
+    }).setOrigin(0.5);
+    
+    // Instructions
+    scene.interiorInstructions = scene.add.text(400, 550, 'Walk near NPC to talk | DOWN at door to exit', {
+        font: '14px Arial',
+        fill: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 }
+    }).setOrigin(0.5);
+}
+
+function checkNPCProximity(scene) {
+    if (currentRPGState !== RPGStates.INTERIOR || !scene.npc) return;
+    
+    const dist = Phaser.Math.Distance.Between(player.x, player.y, scene.npc.x, scene.npc.y);
+    if (dist < 80) {
+        nearNPC = scene.npc.npcType;
+        if (!scene.talkPrompt) {
+            scene.talkPrompt = scene.add.text(scene.npc.x, scene.npc.y + 60, 'Press SPACE to talk', {
+                font: '12px Arial',
+                fill: '#00ff00',
+                backgroundColor: '#000000',
+                padding: { x: 5, y: 2 }
+            }).setOrigin(0.5);
+        }
+    } else {
+        nearNPC = null;
+        if (scene.talkPrompt) {
+            scene.talkPrompt.destroy();
+            scene.talkPrompt = null;
+        }
+    }
+}
+
+function startNPCDialog(scene) {
+    if (!nearNPC) return;
+    
+    currentRPGState = RPGStates.NPC_DIALOG;
+    dialogIndex = 0;
+    
+    // Show first dialog
+    const dialogs = npcDialogs[nearNPC] || npcDialogs.elder;
+    showDialog(scene, dialogs[0]);
+}
+
+function exitHouse(scene) {
+    // Clean up interior
+    if (scene.interiorTitle) scene.interiorTitle.destroy();
+    if (scene.npc) scene.npc.destroy();
+    if (scene.npcLabel) scene.npcLabel.destroy();
+    if (scene.exitDoor) scene.exitDoor.destroy();
+    if (scene.exitText) scene.exitText.destroy();
+    if (scene.interiorInstructions) scene.interiorInstructions.destroy();
+    if (scene.talkPrompt) scene.talkPrompt.destroy();
+    
+    hideDialog(scene);
+    
+    currentRPGState = RPGStates.WORLD;
+    currentHouse = null;
+    nearNPC = null;
+    
+    // Return to world
+    changeBackground(scene, 'bg-stage1');
+    player.setPosition(currentHouse ? currentHouse.data.x + 100 : 200, 400);
+    scene.cameras.main.startFollow(player, true, 0.1, 0.1);
+}
+
+// ============================================================================
+// BACKGROUND MANAGEMENT
+// ============================================================================
+
+function changeBackground(scene, bgKey) {
+    // Hide all backgrounds
+    if (stageBackgrounds.bg1) stageBackgrounds.bg1.setVisible(false);
+    if (stageBackgrounds.bg2) stageBackgrounds.bg2.setVisible(false);
+    if (stageBackgrounds.bg3) stageBackgrounds.bg3.setVisible(false);
+    
+    // Show requested background
+    if (bgKey === 'bg-stage1' && stageBackgrounds.bg1) {
+        stageBackgrounds.bg1.setVisible(true);
+    } else if (bgKey === 'bg-stage2' && stageBackgrounds.bg2) {
+        stageBackgrounds.bg2.setVisible(true);
+    } else if (bgKey === 'bg-stage3' && stageBackgrounds.bg3) {
+        stageBackgrounds.bg3.setVisible(true);
+    }
+}
+
+// ============================================================================
+// RPG UPDATE LOGIC
+// ============================================================================
+
+function updateRPG(scene) {
+    const spaceJustPressed = Phaser.Input.Keyboard.JustDown(jumpButton);
+    const upPressed = cursors.up.isDown || wasdKeys.W.isDown;
+    const downPressed = cursors.down.isDown || wasdKeys.S.isDown;
+    
+    switch (currentRPGState) {
+        case RPGStates.OPENING_DIALOG:
+            if (spaceJustPressed) {
+                dialogIndex++;
+                if (dialogIndex < openingDialogs.length) {
+                    showDialog(scene, openingDialogs[dialogIndex]);
+                } else {
+                    hideDialog(scene);
+                    currentRPGState = RPGStates.CHARACTER_SELECT;
+                    showCharacterSelect(scene);
+                }
+            }
+            break;
+            
+        case RPGStates.WORLD:
+            checkHouseProximity(scene);
+            if (upPressed && currentHouse) {
+                enterHouse(scene);
+            }
+            break;
+            
+        case RPGStates.INTERIOR:
+            checkNPCProximity(scene);
+            if (spaceJustPressed && nearNPC) {
+                startNPCDialog(scene);
+            }
+            // Check for exit
+            const distToExit = Phaser.Math.Distance.Between(player.x, player.y, 100, 500);
+            if (downPressed && distToExit < 80) {
+                exitHouse(scene);
+            }
+            break;
+            
+        case RPGStates.NPC_DIALOG:
+            if (spaceJustPressed) {
+                dialogIndex++;
+                const dialogs = npcDialogs[nearNPC] || npcDialogs.elder;
+                if (dialogIndex < dialogs.length) {
+                    showDialog(scene, dialogs[dialogIndex]);
+                } else {
+                    hideDialog(scene);
+                    dialogIndex = 0;
+                    currentRPGState = RPGStates.INTERIOR;
+                }
+            }
+            break;
+    }
+}
+
+// ============================================================================
+// RPG INITIALIZATION
+// ============================================================================
+
+function initializeRPG(scene) {
+    currentRPGState = RPGStates.OPENING_DIALOG;
+    dialogIndex = 0;
+    
+    // Show first opening dialog
+    showDialog(scene, openingDialogs[0]);
+}

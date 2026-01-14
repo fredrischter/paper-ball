@@ -1,64 +1,53 @@
 function update() {
-    if (!player || popupActive) return;
+    // RPG-specific update logic
+    updateRPG(this);
     
-    // Check for edge exits
-    if (player.x < -20) {
-        // Player exited left - show popup
-        showPopup(this);
-        return;
-    } else if (player.x > 820) {
-        // Player exited right - switch stage
-        if (currentStage === 1) {
-            switchToStage(this, 2);
-        } else if (currentStage === 2) {
-            switchToStage(this, 3);
-        }
+    // Only handle player movement if in world or interior state
+    if (currentRPGState !== RPGStates.WORLD && currentRPGState !== RPGStates.INTERIOR) {
         return;
     }
     
-    // Check for jump button press (keyboard or mobile)
-    const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
-    if (jumpPressed && !isJumping) {
-        performJump();
+    if (!player || !player.body) return;
+    
+    // Get input from keyboard or mobile controls
+    const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
+    const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
+    
+    // Movement speed
+    const speed = 200; // pixels per second
+    
+    // Horizontal movement (side-scrolling style)
+    if (leftPressed) {
+        player.setVelocityX(-speed);
+        currentDirection = 'left';
+        if (player.anims) {
+            player.anims.play('walk-left', true);
+        }
+    } else if (rightPressed) {
+        player.setVelocityX(speed);
+        currentDirection = 'right';
+        if (player.anims) {
+            player.anims.play('walk-right', true);
+        }
+    } else {
+        player.setVelocityX(0);
+        if (player.anims && !player.anims.isPlaying) {
+            player.anims.play(`stand-${currentDirection}`, true);
+        }
+    }
+    
+    // Jump mechanic (only in world mode with gravity)
+    if (currentRPGState === RPGStates.WORLD) {
+        const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
+        if (jumpPressed && Math.abs(player.body.velocity.y) < 0.5) {
+            player.setVelocityY(-10); // Jump force
+        }
     }
     
     // Reset mobile jump flag
     if (mobileJumpPressed) {
         mobileJumpPressed = false;
     }
-    
-    // Get input from keyboard or mobile controls
-    const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
-    const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
-    const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
-    const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
-    
-    // Movement speed (faster during jump)
-    const speed = isJumping ? 5 : 3;
-    
-    // Apply forces for movement (top-down style with no gravity)
-    if (leftPressed) {
-        player.setVelocityX(-speed);
-        currentDirection = 'left';
-    } else if (rightPressed) {
-        player.setVelocityX(speed);
-        currentDirection = 'right';
-    } else {
-        player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
-    }
-    
-    if (upPressed) {
-        player.setVelocityY(-speed);
-        currentDirection = 'up';
-    } else if (downPressed) {
-        player.setVelocityY(speed);
-        currentDirection = 'down';
-    } else {
-        player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
-    }
-    
-    // Update animations
-    updatePlayerAnimation();
 }
 
 function performJump() {
