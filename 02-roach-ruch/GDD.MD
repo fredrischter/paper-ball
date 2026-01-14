@@ -32,10 +32,12 @@ All images are PNG format with transparency where applicable.
 
 ## Game Flow (1-Minute Demo)
 
-### 1. Start Screen (Auto-skip - Direct to gameplay)
-- **No separate start screen** - Game begins immediately
-- Quick 1-second fade-in showing roach in starting position
-- **Transition**: Immediate gameplay start
+### 1. Intro Sequence (3 seconds - Story setup)
+- Brief scene: Roach hiding in drain grate
+- Water starts rising (visual cue)
+- Text flash: "ESCAPE OR DROWN!"
+- Roach automatically starts running
+- **No player input required** - Auto-advances to gameplay
 
 ### 2. Game Screen (Main Gameplay - 55 seconds)
 - **Layout**:
@@ -46,10 +48,13 @@ All images are PNG format with transparency where applicable.
   - Obstacles spawn from right side continuously
 
 - **Controls**: 
-  - **TWO BUTTONS**:
+  - **ONE BUTTON MODE** (Primary):
+    - **Tap anywhere**: Jump (auto-duck after landing)
+    - Simple alternating jump pattern
+  
+  - **TWO BUTTON MODE** (Advanced):
     - **Jump Button** (Right side, y: 900): Tap to jump
     - **Duck Button** (Right side, y: 700): Tap to slide/duck
-  - Alternative: **Single tap** anywhere = Jump (simplified mode)
   
 - **Mechanics**:
   1. Roach auto-runs forward constantly

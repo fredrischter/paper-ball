@@ -33,10 +33,13 @@ All images are PNG format with transparency where applicable.
 
 ## Game Flow (1-Minute Demo)
 
-### 1. Start Screen (2 seconds - Auto-advance)
-- Display game title "FAVELA DEFENSE"
-- Show starting resources: 5 units, 3 barricades
-- **Transition**: Auto-fade to Game Screen with brief tutorial overlay
+### 1. Intro Sequence (4 seconds - Story setup)
+- Aerial view of favela hillside
+- Radio crackles: "Incoming attack! Defend the neighborhood!"
+- Camera zooms to defensive grid
+- Resources appear on screen
+- Text: "PROTECT YOUR COMMUNITY"
+- **No player input required** - Auto-advances to gameplay
 
 ### 2. Game Screen (Main Gameplay - 53 seconds)
 - **Layout**:

@@ -31,9 +31,13 @@ A humorous arcade-action game where players control UFOs to abduct humans, anima
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (Auto-skip - 1 second)
-- UFO appears in night sky
-- "COMMENCE ABDUCTION!" text flash
+### Intro Sequence (4 seconds - Story setup)
+- Space view of Earth
+- Alien transmission crackles: "Mission: Specimen Collection"
+- UFO warps in near Earth
+- Beam activates briefly (test)
+- Text: "QUOTA: 10 SPECIMENS"
+- **No player input required** - Auto-advances to gameplay
 
 ### Game Screen (55 seconds)
 - **Layout**:
@@ -42,13 +46,15 @@ A humorous arcade-action game where players control UFOs to abduct humans, anima
   - Ground targets scattered below
   - Right panel: Abduction quota and cargo
 
-- **ONE BUTTON MODE**: 
+- **ONE BUTTON MODE** (Primary - No Tilt): 
+  - **Drag anywhere**: Move UFO
+  - **Beam activates automatically** when over valid target
+  - Lift finger to release targets
+  
+- **TILT MODE** (Alternative):
   - **Tilt device**: Move UFO
-  - **Tap anywhere**: Activate beam (auto-targets nearest)
-
-- **TWO BUTTON MODE**:
-  - **Move**: Drag UFO with finger/mouse
-  - **Beam**: Hold button to activate tractor beam
+  - **Tap anywhere**: Toggle beam on/off
+  - Auto-targets nearest object
 
 **Timeline**:
 - 0-15s: Tutorial - Abduct 3 humans, 2 cows peacefully

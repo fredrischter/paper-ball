@@ -31,10 +31,13 @@ A psychological horror game with alternating cycles of comfort and terror. Peace
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (2 seconds)
-- Peaceful music, bright colors
-- "Welcome Home" text
-- Fades to safe room
+### Intro Sequence (3 seconds - Story setup)
+- Black screen
+- Sound of footsteps and door opening
+- Lights turn on revealing cheerful room
+- Text: "Home Sweet Home..."
+- Door closes behind you (ominous click)
+- **No player input required** - Auto-advances to gameplay
 
 ### Game Screen (54 seconds)
 - **Layout**:
@@ -43,13 +46,14 @@ A psychological horror game with alternating cycles of comfort and terror. Peace
   - Bottom: Interaction button
   - Right: Run button (appears in horror phase)
 
-- **ONE BUTTON MODE**: 
-  - Tap to interact with highlighted objects
-  - Auto-run when threat appears
-
-- **TWO BUTTON MODE**:
-  - Interact button: Examine objects
-  - Run button: Flee from threats
+- **ONE BUTTON MODE** (Primary): 
+  - **Tap anywhere**: Context-sensitive action
+  - Safe Phase: Auto-interacts with nearest safe object
+  - Horror Phase: Auto-runs toward exit door
+  
+- **TWO BUTTON MODE** (Advanced):
+  - **Interact button**: Examine objects (safe phase)
+  - **Run button**: Flee from threats (horror phase)
 
 **Cycle Structure (3 complete cycles in 54 seconds)**:
 

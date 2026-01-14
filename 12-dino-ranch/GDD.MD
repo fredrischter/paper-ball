@@ -33,9 +33,13 @@ A management game where players run dinosaur operations including farms, trading
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (1 second)
-- "WELCOME TO DINO RANCH!" title
-- Starting assets: 2 Raptors, 1 Trike, 100 coins, 50 meat
+### Intro Sequence (3 seconds - Story setup)
+- Helicopter view descending to ranch
+- Sign appears: "JURRASIC RANCH - GRAND OPENING"
+- Land at main gate
+- Text: "Welcome, New Ranch Owner!"
+- Camera zooms to first pen with eggs
+- **No player input required** - Auto-advances to gameplay
 
 ### Game Screen (55 seconds)
 - **Layout**:
@@ -44,8 +48,13 @@ A management game where players run dinosaur operations including farms, trading
   - Right panel: Actions and resources
   - Bottom: Quick action buttons
 
-- **ONE BUTTON MODE**: Tap dinosaur → Auto-perform next needed action
-- **TWO BUTTON MODE**: Select dinosaur, then choose action
+- **ONE BUTTON MODE** (Primary): 
+  - **Tap dinosaur**: Auto-performs next needed action
+  - System intelligently prioritizes: Feed if hungry → Train if ready → Battle if trained → Breed if mature
+  
+- **TWO BUTTON MODE** (Advanced): 
+  - **Tap action button first** (Feed/Train/Breed/Battle)
+  - **Then tap dinosaur** to execute action
 
 **Timeline**:
 - 0-15s: Feed dinosaurs (management phase)

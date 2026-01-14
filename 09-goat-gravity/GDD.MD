@@ -29,14 +29,23 @@ A physics-driven arcade game where goats climb mountains, descend slopes, and kn
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (Auto-skip)
-- Goat appears at mountain base
-- "GO!" prompt → Immediate start
+### Intro Sequence (3 seconds - Story setup)
+- Mountain peak silhouette against sunset
+- Rival goat stands at summit (silhouette)
+- Text: "THERE CAN BE ONLY ONE KING"
+- Your goat appears at base, looks up determined
+- **No player input required** - Auto-advances to gameplay
 
 ### Game Screen (56 seconds)
 - **Layout**: Side-scrolling mountain terrain
-- **ONE BUTTON MODE**: Tap to jump, double-tap to charge
-- **TWO BUTTON MODE**: Jump button + Charge button
+- **ONE BUTTON MODE** (Primary): 
+  - **Tap anywhere**: Jump (auto-charges if held > 0.5s)
+  - Quick tap = normal jump
+  - Hold tap = charge attack
+  
+- **TWO BUTTON MODE** (Advanced): 
+  - **Jump button** (right bottom): Tap to jump
+  - **Charge button** (right top): Tap to ram attack
 
 **Gameplay**:
 - 0-20s: Climb slopes, basic jumping

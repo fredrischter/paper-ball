@@ -32,12 +32,21 @@ A fantasy management and combat game focused on breeding, training, and deployin
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (1 second - Auto-skip)
-- "DRAGON FORGE ACTIVATED"
+### Intro Sequence (4 seconds - Story setup)
+- Scene: Ancient dragon forge, dormant
+- Dragon egg cracks open on pedestal
+- Text appears: "A NEW DRAGONKEEPER IS BORN"
+- Forge ignites with magical flame
+- **No player input required** - Auto-advances to gameplay
 
-### Game Screen (55 seconds)
-- **ONE BUTTON MODE**: Tap dragon → Auto-select best action
-- **TWO BUTTON MODE**: Select action, then select dragon
+### Game Screen (52 seconds)
+- **ONE BUTTON MODE** (Primary): 
+  - Tap dragon → Auto-perform next needed action in lifecycle
+  - System intelligently chooses: feed → train → battle → breed
+  
+- **TWO BUTTON MODE** (Advanced): 
+  - Select action button first
+  - Then tap dragon to execute
 
 **Timeline**:
 - 0-15s: Breed and hatch first dragon
