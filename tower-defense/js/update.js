@@ -1,33 +1,20 @@
-function update() {
-    if (!player || popupActive) return;
+function update(time, delta) {
+    // Tower Defense update loop
     
-    // Check for edge exits
-    if (player.x < -20) {
-        // Player exited left - show popup
-        showPopup(this);
-        return;
-    } else if (player.x > 820) {
-        // Player exited right - switch stage
-        if (currentStage === 1) {
-            switchToStage(this, 2);
-        } else if (currentStage === 2) {
-            switchToStage(this, 3);
+    // Spawn monsters periodically
+    if (monstersSpawned < maxMonstersPerWave) {
+        monsterSpawnTimer += delta;
+        if (monsterSpawnTimer >= 1500) { // Spawn every 1.5 seconds
+            spawnMonster(this);
+            monsterSpawnTimer = 0;
         }
-        return;
     }
     
-    // Check for jump button press (keyboard or mobile)
-    const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
-    if (jumpPressed && !isJumping) {
-        performJump();
-    }
-    
-    // Reset mobile jump flag
-    if (mobileJumpPressed) {
-        mobileJumpPressed = false;
-    }
-    
-    // Get input from keyboard or mobile controls
+    // Update game objects
+    updateMonsters(this, delta);
+    updateTowers(this, delta, time);
+    updateProjectiles(this, delta);
+}
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
     const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;

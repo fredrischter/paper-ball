@@ -1,4 +1,4 @@
-// Game configuration
+// Game configuration - Tower Defense
 const gameConfig = {
     type: Phaser.AUTO,
     parent: 'phaser-game',
@@ -11,9 +11,9 @@ const gameConfig = {
         height: 600
     },
     physics: {
-        default: 'matter',
-        matter: {
-            gravity: { y: 0 }, // No gravity as requested
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 },
             debug: false
         }
     },
@@ -24,30 +24,57 @@ const gameConfig = {
     }
 };
 
-// Game state variables
-let player;
-let cursors;
-let jumpButton;
-let wasdKeys; // WASD keys
-let platforms;
-let isMobile;
+// Tower Defense Game State
+let towers = [];
+let monsters = [];
+let projectiles = [];
 
-// Physics dolls (squares)
-let squareDolls = [];
-
-// UI buttons
+// UI
 let menuButton;
 let soundButton;
-let dPad;
-let actionButton;
+let scoreText;
+let statusText;
 
 // Sound
 let backgroundMusic;
 let soundEnabled = true;
 
-// Movement state
-let moveLeft = false;
-let moveRight = false;
+// Game state
+let currentStage = 1;
+let kills = 0;
+let escapes = 0;
+let placementMode = false;
+let monsterSpawnTimer = 0;
+let monstersSpawned = 0;
+let maxMonstersPerWave = 30;
+
+// Stage paths (waypoints for monsters)
+const stagePaths = {
+    1: [
+        {x: 0, y: 300},
+        {x: 200, y: 300},
+        {x: 200, y: 150},
+        {x: 600, y: 150},
+        {x: 600, y: 450},
+        {x: 800, y: 450}
+    ],
+    2: [
+        {x: 400, y: 0},
+        {x: 400, y: 200},
+        {x: 150, y: 200},
+        {x: 150, y: 400},
+        {x: 650, y: 400},
+        {x: 650, y: 600}
+    ],
+    3: [
+        {x: 0, y: 150},
+        {x: 350, y: 150},
+        {x: 350, y: 450},
+        {x: 650, y: 450},
+        {x: 650, y: 150},
+        {x: 800, y: 150}
+    ]
+};
 let moveUp = false;
 let moveDown = false;
 let mobileJumpPressed = false; // Track mobile jump button press
