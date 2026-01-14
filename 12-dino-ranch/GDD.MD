@@ -35,7 +35,7 @@ A management game where players run dinosaur operations including farms, trading
 
 ### Intro Sequence (3 seconds - Story setup)
 - Helicopter view descending to ranch
-- Sign appears: "JURRASIC RANCH - GRAND OPENING"
+- Sign appears: "JURASSIC RANCH - GRAND OPENING"
 - Land at main gate
 - Text: "Welcome, New Ranch Owner!"
 - Camera zooms to first pen with eggs
