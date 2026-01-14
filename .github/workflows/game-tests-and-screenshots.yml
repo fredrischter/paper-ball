@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        game: [game-poc, side-scroller, admin-game, tower-defense, physics-adventure]
+        game: [game-poc, side-scroller, admin-game, tower-defense, physics-adventure, rpg]
       fail-fast: false
     
     steps:
