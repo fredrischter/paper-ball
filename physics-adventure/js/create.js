@@ -1,60 +1,88 @@
 function create() {
-    // Add stage background
-    stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
-    stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
-    stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
+    // Add scrolling background
+    const bg = this.add.rectangle(2000, 300, 4000, 600, 0x87CEEB).setDepth(-1); // Sky blue
     
-    // Create player sprite with Matter physics (heavier mass)
-    player = this.matter.add.sprite(400, 300, 'player', 0);
-    player.setFriction(0.1);
-    player.setMass(10); // Heavier mass so it can push the squares
-    player.setFixedRotation(); // Prevent rotation
+    // Create player sprite with Arcade physics
+    player = this.physics.add.sprite(100, 400, 'player', 0);
+    player.setCollideWorldBounds(false); // Allow falling off
+    player.setBounce(0);
+    player.setGravityY(0); // Use world gravity
     
-    // Store scene reference for later use
-    player.scene = this;
+    // Create animations for player
+    createPlayerAnimations(this);
     
-    // Create animations
-    createAnimations(this);
+    // Generate terrain for stage 1
+    generateTerrain(this, 1);
     
-    // Create particle systems
-    createParticleSystems(this);
+    // Enable collisions between player and terrain
+    this.physics.add.collider(player, terrain);
     
-    // Create square dolls for current stage
-    createSquareDollsForStage(this, 1);
-    
-    // Set up keyboard input
-    cursors = this.input.keyboard.createCursorKeys();
-    jumpButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    
-    // WASD keys as alternative
-    wasdKeys = {
-        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-        A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-        D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
-    };
-    
-    // Set up collision detection for sparks
-    this.matter.world.on('collisionstart', function(event) {
-        event.pairs.forEach(pair => {
-            // Check if player hit a doll
-            const { bodyA, bodyB } = pair;
-            if ((bodyA.gameObject === player && squareDolls.includes(bodyB.gameObject)) ||
-                (bodyB.gameObject === player && squareDolls.includes(bodyA.gameObject))) {
-                // Emit sparks at collision point
-                const hitX = (bodyA.position.x + bodyB.position.x) / 2;
-                const hitY = (bodyA.position.y + bodyB.position.y) / 2;
-                emitCollisionSparks(hitX, hitY);
-            }
-        });
-    });
+    // Set up controls
+    setupPhysicsControls(this);
     
     // Create UI elements
-    createUI(this);
+    createPhysicsUI(this);
     
     // Initialize sound (Web Audio API)
     initSound(this);
 }
+
+function createPlayerAnimations(scene) {
+    // Simple walk animation
+    if (!scene.anims.exists('walk-right')) {
+        scene.anims.create({
+            key: 'walk-right',
+            frames: scene.anims.generateFrameNumbers('player', { start: 1, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+    }
+}
+
+function createPhysicsUI(scene) {
+    // Stage text
+    stageText = scene.add.text(16, 16, 'Stage 1', {
+        fontSize: '24px',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+    }).setScrollFactor(0).setDepth(100);
+    
+    // Instructions
+    const instructions = scene.add.text(400, 16, 'Arrow keys to move | SHIFT to charge | UP/W to jump', {
+        fontSize: '18px',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 3,
+        align: 'center'
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
+    
+    // Menu button (top left)
+    menuButton = scene.add.rectangle(50, 50, 60, 60, 0x333333)
+        .setInteractive()
+        .setScrollFactor(0)
+        .setDepth(100);
+    scene.add.text(50, 50, 'MENU', {
+        fontSize: '14px',
+        fill: '#ffffff'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    
+    // Sound button (top right)
+    soundButton = scene.add.rectangle(750, 50, 60, 60, 0x333333)
+        .setInteractive()
+        .setScrollFactor(0)
+        .setDepth(100);
+    scene.add.text(750, 50, 'SOUND', {
+        fontSize: '14px',
+        fill: '#ffffff'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+}
+
+function initSound(scene) {
+    // Placeholder for sound
+    soundEnabled = false;
+}
+
 
 function createParticleSystems(scene) {
     // Smoke particles - emit when player is running

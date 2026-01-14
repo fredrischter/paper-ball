@@ -1,4 +1,4 @@
-// Game configuration
+// Game configuration - Physics Adventure Variant
 const gameConfig = {
     type: Phaser.AUTO,
     parent: 'phaser-game',
@@ -11,9 +11,9 @@ const gameConfig = {
         height: 600
     },
     physics: {
-        default: 'matter',
-        matter: {
-            gravity: { y: 0 }, // No gravity as requested
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 800 }, // Strong gravity for platformer feel
             debug: false
         }
     },
@@ -27,27 +27,33 @@ const gameConfig = {
 // Game state variables
 let player;
 let cursors;
-let jumpButton;
-let wasdKeys; // WASD keys
+let shiftKey;
+let wasdKeys;
 let platforms;
 let isMobile;
+let ground;
 
-// Physics dolls (squares)
-let squareDolls = [];
+// Terrain elements
+let terrain = [];
+let goalFlag;
+
+// Movement state
+let isCharging = false;
+let moveSpeed = 200; // Normal speed
+let chargeSpeed = 400; // Speed boost when holding Shift
+let jumpPower = 400; // Base jump power
+
+// Stage management
+let currentStage = 1;
+let stageText;
 
 // UI buttons
 let menuButton;
 let soundButton;
-let dPad;
-let actionButton;
 
 // Sound
 let backgroundMusic;
 let soundEnabled = true;
-
-// Movement state
-let moveLeft = false;
-let moveRight = false;
 let moveUp = false;
 let moveDown = false;
 let mobileJumpPressed = false; // Track mobile jump button press
