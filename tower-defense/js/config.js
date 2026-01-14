@@ -40,7 +40,7 @@ let backgroundMusic;
 let soundEnabled = true;
 
 // Game state
-let currentStage = 1;
+// currentStage declared on line 87
 let kills = 0;
 let escapes = 0;
 let placementMode = false;

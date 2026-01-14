@@ -15,38 +15,6 @@ function update(time, delta) {
     updateTowers(this, delta, time);
     updateProjectiles(this, delta);
 }
-    const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
-    const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
-    const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
-    const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
-    
-    // Movement speed (faster during jump)
-    const speed = isJumping ? 5 : 3;
-    
-    // Apply forces for movement (top-down style with no gravity)
-    if (leftPressed) {
-        player.setVelocityX(-speed);
-        currentDirection = 'left';
-    } else if (rightPressed) {
-        player.setVelocityX(speed);
-        currentDirection = 'right';
-    } else {
-        player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
-    }
-    
-    if (upPressed) {
-        player.setVelocityY(-speed);
-        currentDirection = 'up';
-    } else if (downPressed) {
-        player.setVelocityY(speed);
-        currentDirection = 'down';
-    } else {
-        player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
-    }
-    
-    // Update animations
-    updatePlayerAnimation();
-}
 
 function performJump() {
     // Set jumping state

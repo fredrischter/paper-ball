@@ -2,6 +2,7 @@
 class BootScene extends Phaser.Scene {
     constructor() {
         super({ key: 'BootScene' });
+    }
 
     preload() {
         const width = this.cameras.main.width;
@@ -11,6 +12,7 @@ class BootScene extends Phaser.Scene {
         const loadingText = this.add.text(width / 2, height / 2 - 50, 'Loading...', {
             font: '32px Arial',
             fill: '#ffffff'
+        }).setOrigin(0.5);
 
         const progressBarBg = this.add.rectangle(width / 2, height / 2 + 20, 400, 30, 0x555555);
         const progressBar = this.add.rectangle(width / 2 - 200, height / 2 + 20, 0, 26, 0xffffff);
@@ -19,31 +21,40 @@ class BootScene extends Phaser.Scene {
         const progressText = this.add.text(width / 2, height / 2 + 60, '0%', {
             font: '20px Arial',
             fill: '#ffffff'
+        }).setOrigin(0.5);
 
         this.load.on('progress', (value) => {
             progressBar.width = 400 * value;
             progressText.setText(Math.floor(value * 100) + '%');
+        });
 
         this.load.on('complete', () => {
             loadingText.setText('Ready!');
             setTimeout(() => {
                 this.scene.start('GameScene');
+            }, 500);
+        });
 
         preload.call(this);
+    }
 }
 
 class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
+    }
 
     create() {
         create.call(this);
+    }
 
     update() {
         update.call(this);
+    }
 }
 
-// Game configuration
+
+// Game configuration - Side Scroller Variant
 const gameConfig = {
     type: Phaser.AUTO,
     parent: 'phaser-game',
@@ -54,12 +65,19 @@ const gameConfig = {
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: 800,
         height: 600
+    },
     physics: {
         default: 'matter',
         matter: {
-            gravity: { y: 0 }, // No gravity as requested
+            gravity: { y: 1 }, // Enable gravity for platformer
             debug: false
-    scene: [BootScene, GameScene] // OLD: {
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
 };
 
 // Game state variables
@@ -69,9 +87,12 @@ let jumpButton;
 let wasdKeys; // WASD keys
 let platforms;
 let isMobile;
+let ground;
 
-// Physics dolls (squares)
-let squareDolls = [];
+// Collectables
+let coins = [];
+let score = 0;
+let scoreText;
 
 // UI buttons
 let menuButton;
@@ -83,29 +104,28 @@ let actionButton;
 let backgroundMusic;
 let soundEnabled = true;
 
-// Movement state
+// Movement state (side-scroller: only left/right movement)
 let moveLeft = false;
 let moveRight = false;
-let moveUp = false;
-let moveDown = false;
 let mobileJumpPressed = false; // Track mobile jump button press
 
 // Animation state
-let currentDirection = 'down'; // down, up, left, right
+let currentDirection = 'right'; // right or left (no up/down in side-scroller)
 let isJumping = false;
+let canJump = false; // Can only jump when on ground
 
 // Stage management
 let currentStage = 1; // 1, 2, or 3
 let stageBackgrounds = {}; // Will hold background images
+let worldWidth = 4000; // Extended world width (5x viewport)
 
-// Popup state
+// Camera
+let camera;
+
+// Popup state (not used in side-scroller variant)
 let popupOverlay = null;
 let popupActive = false;
 
-// Particle systems
-let smokeParticles = null;     // Running smoke particles
-let sparkParticles = null;      // Collision spark particles
-let celebrationParticles = null; // Level complete celebration
 function preload() {
     // Detect if mobile
     isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -114,16 +134,19 @@ function preload() {
     this.load.spritesheet('player', 'assets/spritesheets/character.png', {
         frameWidth: 32,
         frameHeight: 48
+    });
     
     // Load UI buttons spritesheet (7 frames: menu, sound, dpad-up, dpad-down, dpad-left, dpad-right, action)
     this.load.spritesheet('ui-buttons', 'assets/spritesheets/ui-buttons.png', {
         frameWidth: 64,
         frameHeight: 64
+    });
     
     // Load popup buttons spritesheet (2 frames: OK, Cancel)
     this.load.spritesheet('popup-buttons', 'assets/spritesheets/popup-buttons.png', {
         frameWidth: 90,
         frameHeight: 50
+    });
     
     // Load stage backgrounds
     this.load.image('bg-stage1', 'assets/images/stage1-bg.png');
@@ -151,29 +174,50 @@ function preload() {
     // Note: Background music uses Web Audio API (no file to load)
     // In production, you could load: this.load.audio('bgmusic', 'assets/audio/background.mp3');
 }
+
 function create() {
-    // Add stage background
-    stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
-    stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
-    stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
+    // Set world bounds for extended horizontal scrolling
+    this.matter.world.setBounds(0, 0, worldWidth, 600);
     
-    // Create player sprite with Matter physics (heavier mass)
-    player = this.matter.add.sprite(400, 300, 'player', 0);
+    // Add tiled stage background
+    const bgCount = Math.ceil(worldWidth / 800);
+    for (let i = 0; i < bgCount; i++) {
+        stageBackgrounds[`bg${i}`] = this.add.image(400 + i * 800, 300, 'bg-stage1').setDepth(-1).setScrollFactor(0.5);
+    }
+    
+    // Create ground platform across the entire world
+    ground = this.matter.add.rectangle(worldWidth / 2, 550, worldWidth, 60, { 
+        isStatic: true,
+        label: 'ground'
+    });
+    
+    // Visual representation of ground
+    const groundGraphics = this.add.graphics();
+    groundGraphics.fillStyle(0x8B4513, 1);
+    groundGraphics.fillRect(0, 520, worldWidth, 80);
+    groundGraphics.setDepth(-0.5);
+    
+    // Create player sprite with Matter physics
+    player = this.matter.add.sprite(100, 400, 'player', 0);
     player.setFriction(0.1);
-    player.setMass(10); // Heavier mass so it can push the squares
-    player.setFixedRotation(); // Prevent rotation
+    player.setMass(1);
+    player.setFixedRotation();
+    player.setBounce(0.1);
     
-    // Store scene reference for later use
+    // Store scene reference
     player.scene = this;
+    
+    // Setup camera to follow player horizontally
+    camera = this.cameras.main;
+    camera.setBounds(0, 0, worldWidth, 600);
+    camera.startFollow(player, true, 0.1, 0);
+    camera.setFollowOffset(0, 0);
     
     // Create animations
     createAnimations(this);
     
-    // Create particle systems
-    createParticleSystems(this);
-    
-    // Create square dolls for current stage
-    createSquareDollsForStage(this, 1);
+    // Create collectables (coins) scattered throughout the level
+    createCollectables(this);
     
     // Set up keyboard input
     cursors = this.input.keyboard.createCursorKeys();
@@ -181,67 +225,93 @@ function create() {
     
     // WASD keys as alternative
     wasdKeys = {
-        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
         A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+    };
     
-    // Set up collision detection for sparks
+    // Set up collision detection
     this.matter.world.on('collisionstart', function(event) {
         event.pairs.forEach(pair => {
-            // Check if player hit a doll
+            // Check if player hit ground
             const { bodyA, bodyB } = pair;
-            if ((bodyA.gameObject === player && squareDolls.includes(bodyB.gameObject)) ||
-                (bodyB.gameObject === player && squareDolls.includes(bodyA.gameObject))) {
-                // Emit sparks at collision point
-                const hitX = (bodyA.position.x + bodyB.position.x) / 2;
-                const hitY = (bodyA.position.y + bodyB.position.y) / 2;
-                emitCollisionSparks(hitX, hitY);
+            if ((bodyA.gameObject === player && bodyB.label === 'ground') ||
+                (bodyB.gameObject === player && bodyA.label === 'ground')) {
+                canJump = true;
+            }
+            
+            // Check if player collected a coin
+            if (bodyA.gameObject === player || bodyB.gameObject === player) {
+                const coin = bodyA.gameObject === player ? bodyB.gameObject : bodyA.gameObject;
+                if (coin && coins.includes(coin)) {
+                    collectCoin(coin);
+                }
+            }
+        });
+    });
     
-    // Create UI elements
+    // Create UI elements (fixed to camera)
     createUI(this);
+    
+    // Create score text
+    scoreText = this.add.text(16, 16, 'Score: 0', {
+        fontSize: '32px',
+        fill: '#fff',
+        stroke: '#000',
+        strokeThickness: 4
+    });
+    scoreText.setScrollFactor(0);
+    scoreText.setDepth(1000);
     
     // Initialize sound (Web Audio API)
     initSound(this);
 }
 
-function createParticleSystems(scene) {
-    // Smoke particles - emit when player is running
-    smokeParticles = scene.add.particles(0, 0, 'particle-smoke', {
-        speed: { min: 10, max: 30 },
-        angle: { min: 0, max: 360 },
-        scale: { start: 0.5, end: 0 },
-        alpha: { start: 0.6, end: 0 },
-        lifespan: 500,
-        frequency: 80,
-        emitting: false,
-        blendMode: 'ADD'
-    smokeParticles.setDepth(5);
+function createCollectables(scene) {
+    // Create coins scattered throughout the level
+    const coinCount = 50; // 50 coins across the level
+    const coinSpacing = worldWidth / (coinCount + 1);
     
-    // Spark particles - emit when hitting blocks
-    sparkParticles = scene.add.particles(0, 0, 'particle-spark', {
-        speed: { min: 50, max: 150 },
-        angle: { min: 0, max: 360 },
-        scale: { start: 1, end: 0.2 },
-        alpha: { start: 1, end: 0 },
-        lifespan: 300,
-        gravityY: 0,
-        emitting: false,
-        blendMode: 'ADD'
-    sparkParticles.setDepth(100);
+    for (let i = 0; i < coinCount; i++) {
+        const x = coinSpacing * (i + 1);
+        const y = Phaser.Math.Between(100, 400);
+        
+        // Create coin as a circle sprite (using square-doll texture temporarily)
+        const coin = scene.matter.add.sprite(x, y, 'square-doll', null, {
+            isStatic: false,
+            isSensor: true, // Pass through
+            label: 'coin'
+        });
+        coin.setScale(0.4);
+        coin.setTint(0xFFD700); // Gold color
+        coins.push(coin);
+        
+        // Add floating animation
+        scene.tweens.add({
+            targets: coin,
+            y: y - 10,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+}
+
+function collectCoin(coin) {
+    if (!coin || !coin.active) return;
     
-    // Celebration particles - shower when level completes
-    celebrationParticles = scene.add.particles(0, 0, 'particle-confetti', {
-        speed: { min: 100, max: 300 },
-        angle: { min: 240, max: 300 },
-        scale: { start: 1, end: 0.5 },
-        alpha: { start: 1, end: 0.5 },
-        lifespan: 2000,
-        gravityY: 0,
-        rotate: { min: 0, max: 360 },
-        emitting: false,
-        blendMode: 'NORMAL'
-    celebrationParticles.setDepth(200);
+    // Remove coin
+    const index = coins.indexOf(coin);
+    if (index > -1) {
+        coins.splice(index, 1);
+    }
+    coin.destroy();
+    
+    // Increase score
+    score += 10;
+    scoreText.setText('Score: ' + score);
+    
+    // Play collection sound (can be added later)
 }
 
 function emitCollisionSparks(x, y) {
@@ -273,6 +343,7 @@ function startCelebration(scene) {
             quantity: 3,
             frequency: 50,
             blendMode: 'NORMAL'
+        });
         emitter.setDepth(200);
         
         // Stop after 2 seconds
@@ -280,6 +351,9 @@ function startCelebration(scene) {
             emitter.stop();
             scene.time.delayedCall(2500, () => {
                 emitter.destroy();
+            });
+        });
+    }
 }
 
 function createAnimations(scene) {
@@ -288,6 +362,7 @@ function createAnimations(scene) {
         key: 'stand',
         frames: [{ key: 'player', frame: 0 }],
         frameRate: 10
+    });
     
     // Walking animations (8 frames each)
     const directions = ['down', 'left', 'right', 'up'];
@@ -298,8 +373,11 @@ function createAnimations(scene) {
             frames: scene.anims.generateFrameNumbers('player', { 
                 start: 1 + index * 8, 
                 end: 1 + index * 8 + 7 
+            }),
             frameRate: 10,
             repeat: -1
+        });
+    });
     
     // Jumping animations (8 frames each)
     directions.forEach((dir, index) => {
@@ -308,8 +386,11 @@ function createAnimations(scene) {
             frames: scene.anims.generateFrameNumbers('player', { 
                 start: 33 + index * 8, 
                 end: 33 + index * 8 + 7 
+            }),
             frameRate: 10,
             repeat: 0
+        });
+    });
 }
 
 function createUI(scene) {
@@ -322,6 +403,7 @@ function createUI(scene) {
     menuButton.on('pointerdown', () => {
         console.log('Menu clicked');
         alert('Menu\n\nControls:\n- Arrow keys or WASD to move\n- Space to jump\n- Click sound button to toggle music');
+    });
     
     // Top-right: Sound button
     soundButton = scene.add.sprite(760, 40, 'ui-buttons', 1)
@@ -332,6 +414,7 @@ function createUI(scene) {
     soundButton.on('pointerdown', () => {
         toggleSound();
         updateSoundButton();
+    });
     
     // Middle-top: Score/title text
     const titleText = scene.add.text(400, 30, 'Game POC - Character Demo', {
@@ -339,6 +422,7 @@ function createUI(scene) {
         fill: '#fff',
         stroke: '#000',
         strokeThickness: 4
+    }).setOrigin(0.5, 0).setScrollFactor(0);
     
     // Middle-bottom: Instructions text
     const instructionsText = scene.add.text(400, 560, 
@@ -348,10 +432,12 @@ function createUI(scene) {
             fill: '#fff',
             stroke: '#000',
             strokeThickness: 3
+        }).setOrigin(0.5, 0).setScrollFactor(0);
     
     // Mobile controls
     if (isMobile) {
         createMobileControls(scene);
+    }
 }
 
 function createMobileControls(scene) {
@@ -410,9 +496,11 @@ function createMobileControls(scene) {
         fontSize: '14px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setScrollFactor(0);
     
     actionButton.on('pointerdown', () => {
         mobileJumpPressed = true;
+    });
 }
 
 function initSound(scene) {
@@ -446,22 +534,29 @@ function initSound(scene) {
             // Loop
             if (soundEnabled) {
                 setTimeout(window.playBackgroundMusic, 2000);
+            }
+        };
         
         if (soundEnabled) {
             window.playBackgroundMusic();
+        }
+    } catch (e) {
         console.log('Web Audio API not supported');
+    }
 }
 
 function toggleSound() {
     soundEnabled = !soundEnabled;
     if (soundEnabled && window.playBackgroundMusic) {
         window.playBackgroundMusic();
+    }
 }
 
 function updateSoundButton() {
     // Visual feedback for sound state
     if (soundButton) {
         soundButton.setAlpha(soundEnabled ? 1.0 : 0.5);
+    }
 }
 
 function showPopup(scene) {
@@ -480,10 +575,12 @@ function showPopup(scene) {
         fontSize: '32px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1002);
     
     const messageText = scene.add.text(400, 260, 'You went off the left edge!', {
         fontSize: '20px',
         fill: '#ccc'
+    }).setOrigin(0.5).setDepth(1002);
     
     // Create OK button
     const okButton = scene.add.sprite(300, 360, 'popup-buttons', 0)
@@ -495,6 +592,7 @@ function showPopup(scene) {
         fontSize: '20px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
     
     // Create Cancel button
     const cancelButton = scene.add.sprite(500, 360, 'popup-buttons', 1)
@@ -506,6 +604,7 @@ function showPopup(scene) {
         fontSize: '20px',
         fill: '#fff',
         fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(1003);
     
     // Store popup elements
     popupOverlay = {
@@ -517,6 +616,7 @@ function showPopup(scene) {
         okText,
         cancelButton,
         cancelText
+    };
     
     // Close popup function
     const closePopup = () => {
@@ -537,6 +637,7 @@ function showPopup(scene) {
         
         // Reset game to beginning
         resetGame(scene);
+    };
     
     // Button event handlers
     okButton.on('pointerdown', closePopup);
@@ -585,6 +686,8 @@ function switchToStage(scene, stageNumber) {
             // Remove old square dolls and create new ones for stage 2
             destroySquareDolls();
             createSquareDollsForStage(scene, 2);
+        });
+    } else if (stageNumber === 3) {
         // Trigger celebration for completing stage 2
         startCelebration(scene);
         
@@ -592,6 +695,8 @@ function switchToStage(scene, stageNumber) {
         scene.time.delayedCall(2000, () => {
             // Show interstitial
             showInterstitial(scene);
+        });
+    }
 }
 
 function createSquareDollsForStage(scene, stage) {
@@ -611,12 +716,15 @@ function createSquareDollsForStage(scene, stage) {
         doll.setFixedRotation(); // Prevent rotation
         
         squareDolls.push(doll);
+    });
 }
 
 function destroySquareDolls() {
     squareDolls.forEach(doll => {
         if (doll && doll.scene) {
             doll.destroy();
+        }
+    });
     squareDolls = [];
 }
 
@@ -628,53 +736,49 @@ function showInterstitial(scene) {
     scene.time.delayedCall(3000, () => {
         interstitial.destroy();
         resetGame(scene);
+    });
 }
+
 function update() {
-    if (!player || popupActive) return;
+    if (!player) return;
     
-    // Check for edge exits
-    if (player.x < -20) {
-        // Player exited left - show popup
-        showPopup(this);
+    // Check if player reached end of level
+    if (player.x > worldWidth - 100) {
+        // Player reached end - show completion message
+        handleLevelComplete(this);
         return;
-        // Player exited right - switch stage
-        if (currentStage === 1) {
-            switchToStage(this, 2);
-            switchToStage(this, 3);
-        return;
+    }
     
     // Check for jump button press (keyboard or mobile)
     const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
-    if (jumpPressed && !isJumping) {
+    if (jumpPressed && canJump && !isJumping) {
         performJump();
+        canJump = false; // Prevent double jump
+    }
     
     // Reset mobile jump flag
     if (mobileJumpPressed) {
         mobileJumpPressed = false;
+    }
     
-    // Get input from keyboard or mobile controls
+    // Get input from keyboard or mobile controls (only left/right for side-scroller)
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
-    const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
-    const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
     
-    // Movement speed (faster during jump)
-    const speed = isJumping ? 5 : 3;
+    // Movement speed
+    const speed = 5;
     
-    // Apply forces for movement (top-down style with no gravity)
+    // Apply horizontal movement
     if (leftPressed) {
         player.setVelocityX(-speed);
         currentDirection = 'left';
+    } else if (rightPressed) {
         player.setVelocityX(speed);
         currentDirection = 'right';
-        player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
-    
-    if (upPressed) {
-        player.setVelocityY(-speed);
-        currentDirection = 'up';
-        player.setVelocityY(speed);
-        currentDirection = 'down';
-        player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
+    } else {
+        // Apply horizontal damping
+        player.setVelocityX(player.body.velocity.x * 0.85);
+    }
     
     // Update animations
     updatePlayerAnimation();
@@ -684,6 +788,9 @@ function performJump() {
     // Set jumping state
     isJumping = true;
     
+    // Apply upward force
+    player.setVelocityY(-15);
+    
     // Play jump animation for current direction
     const jumpAnim = `jump-${currentDirection}`;
     player.anims.play(jumpAnim, true);
@@ -691,13 +798,16 @@ function performJump() {
     // Reset jumping state after animation completes
     const resetJump = () => {
         isJumping = false;
+    };
     
     player.once('animationcomplete', resetJump);
     
-    // Fallback timeout in case animation doesn't complete (e.g., player destroyed)
+    // Fallback timeout
     setTimeout(() => {
         if (isJumping) {
             isJumping = false;
+        }
+    }, 1000);
 }
 
 function updatePlayerAnimation() {
@@ -707,34 +817,50 @@ function updatePlayerAnimation() {
     if (isJumping) return;
     
     const velocityX = Math.abs(player.body.velocity.x);
-    const velocityY = Math.abs(player.body.velocity.y);
-    const isMoving = velocityX > 0.5 || velocityY > 0.5;
+    const isMoving = velocityX > 0.5;
     
-    // Control smoke particles based on movement
-    if (smokeParticles) {
-        if (isMoving) {
-            // Emit smoke particles when running
-            smokeParticles.startFollow(player, 0, 10); // Follow player with offset below
-            if (!smokeParticles.emitting) {
-                smokeParticles.start();
-            // Stop emitting when standing still
-            if (smokeParticles.emitting) {
-                smokeParticles.stop();
-    
-    // Walking animations
     if (isMoving) {
+        // Play walking animation for current direction
         const walkAnim = `walk-${currentDirection}`;
         if (player.anims.currentAnim?.key !== walkAnim) {
             player.anims.play(walkAnim, true);
-        // Standing
+        }
+    } else {
+        // Play standing animation
         if (player.anims.currentAnim?.key !== 'stand') {
             player.anims.play('stand', true);
+        }
+    }
 }
-// Initialize the Phaser game
-const game = new Phaser.Game(gameConfig);
 
-// Log game info
-console.log('Game POC initialized');
-console.log('Phaser version:', Phaser.VERSION);
-console.log('Controls: Arrow keys or WASD to move, Space to jump');
-console.log('Mobile: Use on-screen D-pad and action button');
+function handleLevelComplete(scene) {
+    // Show completion message
+    const completeText = scene.add.text(camera.scrollX + 400, 300, 
+        `Level Complete!\nScore: ${score}\n\nPress SPACE to restart`, {
+        fontSize: '32px',
+        fill: '#fff',
+        stroke: '#000',
+        strokeThickness: 6,
+        align: 'center'
+    });
+    completeText.setOrigin(0.5);
+    completeText.setScrollFactor(0);
+    completeText.setDepth(1001);
+    
+    // Disable player
+    player.setVelocity(0, 0);
+    player.setStatic(true);
+    
+    // Restart on space
+    const restartHandler = (event) => {
+        if (event.code === 'Space') {
+            scene.scene.restart();
+        }
+    };
+    scene.input.keyboard.on('keydown', restartHandler);
+}
+
+
+// Initialize game
+const game = new Phaser.Game(gameConfig);
+console.log('side-scroller game initialized');

@@ -44,7 +44,7 @@ let chargeSpeed = 400; // Speed boost when holding Shift
 let jumpPower = 400; // Base jump power
 
 // Stage management
-let currentStage = 1;
+// currentStage declared on line 66
 let stageText;
 
 // UI buttons
