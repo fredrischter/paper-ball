@@ -1,13 +1,33 @@
 {
-  "name": "paper-ball",
+  "name": "game-poc",
   "version": "1.0.0",
-  "description": "Paper Ball - A physics-based game where you throw a paper ball into a trash can",
-  "main": "index.html",
+  "description": "A proof of concept for an HTML5 game with animated sprite character, demonstrating all the core requirements for a responsive, cross-platform game.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
   "scripts": {
     "start": "npx http-server . -p 8080 -o",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "generate-sprites": "node scripts/generate-sprites.js"
   },
-  "keywords": ["game", "html5", "physics", "multiplatform"],
+  "keywords": [
+    "game",
+    "phaser",
+    "html5",
+    "animation",
+    "sprites"
+  ],
   "author": "",
-  "license": "MIT"
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.70.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "canvas": "^3.2.1",
+    "jest": "^30.2.0"
+  }
 }
