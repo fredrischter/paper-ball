@@ -23,9 +23,14 @@ All images are PNG format with transparency where applicable.
 | `hand_idle.png` | 150x150 | Hand in neutral position |
 | `hand_back.png` | 150x150 | Hand pulled back (wind-up) |
 | `hand_forward.png` | 150x150 | Hand extended forward (release) |
-| `manager_walk.png` | 180x250 | Manager character sprite (walking animation) |
-| `paper_stack.png` | 120x80 | Stack of papers manager hands over |
-| `speech_bubble.png` | 500x150 | Speech bubble for manager dialogue |
+| `manager_large_01.png` | 1400x1000 | Manager full body - entering/neutral pose |
+| `manager_large_02.png` | 1400x1000 | Manager - mouth open speaking frame 1 |
+| `manager_large_03.png` | 1400x1000 | Manager - mouth open speaking frame 2 |
+| `manager_large_04.png` | 1400x1000 | Manager - hand raised with papers frame 1 |
+| `manager_large_05.png` | 1400x1000 | Manager - hand raised with papers frame 2 |
+| `manager_large_06.png` | 1400x1000 | Manager - shaking papers emphasizing |
+| `manager_large_07.png` | 1400x1000 | Manager - walking away pose |
+| `speech_bubble.png` | 800x200 | Large speech bubble for manager dialogue |
 | `fan.png` | 180x180 | Rotating office fan |
 | `wind_indicator.png` | 100x40 | Wind direction arrow |
 | `power_meter.png` | 60x200 | Vertical power meter bar |
@@ -35,14 +40,29 @@ All images are PNG format with transparency where applicable.
 
 ## Game Flow (1-Minute Demo)
 
-### 1. Intro Sequence (5 seconds - Story setup)
+### 1. Intro Sequence (7 seconds - Story setup with detailed animation)
 - Office background fades in
-- Manager character walks in from left side (1 second walk animation)
-- Manager stops at center, places paper stack on desk
-- Speech bubble appears: **"Prepare this report for tomorrow!"**
-- Manager walks away to the right (1 second exit animation)
-- Camera focuses on desk with hand and paper stack
-- **No player input required** - Auto-advances to gameplay
+- **Manager appears large on screen** (covering 70% of screen area, 1400x1000):
+  
+  **Animation Timeline:**
+  - **0.0-0.5s**: Manager enters from left (manager_large_01.png slides in)
+  - **0.5-1.0s**: Manager stops center screen, facing player
+  - **1.0-2.5s**: Manager speaks - animated dialogue (alternating frames):
+    - Frame manager_large_02.png (0.2s) - mouth open
+    - Frame manager_large_03.png (0.2s) - mouth wider
+    - Repeat 3 times for speaking animation
+  - **2.5-3.0s**: Speech bubble appears above manager: **"Prepare this report for tomorrow!"**
+  - **3.0-4.5s**: Manager raises hand with papers (alternating frames):
+    - Frame manager_large_04.png (0.3s) - hand raising
+    - Frame manager_large_05.png (0.3s) - hand higher
+    - Repeat 2-3 times
+  - **4.5-5.5s**: Manager shakes papers for emphasis:
+    - Frame manager_large_06.png - rapid shake animation (0.15s intervals)
+  - **5.5-6.5s**: Manager walks away to right (manager_large_07.png slides out)
+  - **6.5-7.0s**: Camera zooms/transitions to desk with hand visible
+  
+- **Manager positioned**: Centered at (260, 40) - takes up most of screen
+- **No player input required** - Full cinematic intro auto-advances to gameplay
 
 ### 2. Game Screen (Main Gameplay - 50 seconds)
 - **Layout**:
@@ -96,6 +116,44 @@ Wind Force: Random between -200 to +200 px/s horizontal
 Air Resistance: 0.98 multiplier per frame
 Ball Mass: 10 (for physics calculations)
 Throw Angle: Fixed at 45 degrees upward
+```
+
+### Manager Animation System
+```
+Intro Sequence Animation (7 seconds total):
+
+ENTRANCE (0.0-1.0s):
+  - manager_large_01.png slides in from left
+  - Position: x starts at -1400, slides to 260
+  - Manager fills 70% of screen (1400x1000)
+
+SPEAKING (1.0-2.5s):
+  - Alternate between frames for talking animation
+  - Frame sequence: 02 → 03 → 02 → 03 → 02 → 03
+  - Each frame: 0.2 seconds
+  - Creates natural speaking motion
+
+DIALOGUE (2.5-3.0s):
+  - Speech bubble appears at (560, 100)
+  - Large size: 800x200 to match manager scale
+  - Text: "Prepare this report for tomorrow!"
+
+PAPER GESTURE (3.0-4.5s):
+  - Hand raising animation with papers
+  - Alternate: 04 → 05 → 04 → 05 → 04
+  - Each frame: 0.3 seconds
+  - Papers visible in hand
+
+EMPHASIS (4.5-5.5s):
+  - manager_large_06.png for shake effect
+  - Rapid position shifts (±10px horizontal)
+  - 0.15 second intervals
+  - Creates urgent shaking motion
+
+EXIT (5.5-7.0s):
+  - manager_large_07.png slides out to right
+  - Position: x=260 slides to x=1920
+  - Fade out as exits
 ```
 
 ### Hand Animation System
@@ -175,20 +233,54 @@ Throw Trigger:
 - **Content**: Hand extended forward in release position
 - **Format**: Placeholder = Beige hand shape, extended forward
 
-### manager_walk.png
-- **Size**: 180x250
-- **Content**: Manager character (suit, briefcase), side view for walking
-- **Format**: Placeholder = Gray suited figure silhouette
+### manager_large_01.png
+- **Size**: 1400x1000
+- **Content**: Manager full body in neutral/entering pose - business suit, professional appearance
+- **Color Scheme**: Dark suit, tie, holding papers
+- **Format**: Placeholder = Large gray silhouette of business person with papers in hand
+- **Notes**: This is the base pose, manager facing forward/slightly angled
 
-### paper_stack.png
-- **Size**: 120x80
-- **Content**: Stack of white papers
-- **Format**: Placeholder = White rectangles stacked
+### manager_large_02.png
+- **Size**: 1400x1000
+- **Content**: Manager speaking - mouth open (first speaking frame)
+- **Format**: Placeholder = Same as 01 but with mouth circle open (small)
+- **Notes**: Subtle mouth open position for speaking animation
+
+### manager_large_03.png
+- **Size**: 1400x1000
+- **Content**: Manager speaking - mouth wider open (second speaking frame)
+- **Format**: Placeholder = Same as 01 but with mouth circle open (larger)
+- **Notes**: More pronounced mouth open for alternating speech animation
+
+### manager_large_04.png
+- **Size**: 1400x1000
+- **Content**: Manager with hand raised holding papers - mid-raise position
+- **Format**: Placeholder = Silhouette with arm partially raised, papers visible
+- **Notes**: Hand coming up to emphasize the papers
+
+### manager_large_05.png
+- **Size**: 1400x1000
+- **Content**: Manager with hand raised higher holding papers
+- **Format**: Placeholder = Silhouette with arm fully raised, papers prominent
+- **Notes**: Full gesture, papers clearly shown
+
+### manager_large_06.png
+- **Size**: 1400x1000
+- **Content**: Manager shaking papers with emphasis - dynamic pose
+- **Format**: Placeholder = Silhouette with slight lean, papers in motion
+- **Notes**: More energetic pose showing urgency/emphasis
+
+### manager_large_07.png
+- **Size**: 1400x1000
+- **Content**: Manager walking away - side view departing
+- **Format**: Placeholder = Silhouette in walking stance, facing right
+- **Notes**: Exit pose for leaving the scene
 
 ### speech_bubble.png
-- **Size**: 500x150
-- **Content**: Comic-style speech bubble with tail pointing down
-- **Format**: Placeholder = White rounded rectangle with tail
+- **Size**: 800x200
+- **Content**: Large comic-style speech bubble with tail pointing down to manager
+- **Format**: Placeholder = White rounded rectangle with tail, large enough for dialogue text
+- **Notes**: Sized to match large manager sprite, highly visible
 
 ### fan.png
 - **Size**: 180x180
@@ -224,29 +316,31 @@ Throw Trigger:
 
 ### Simplified 1-Minute Demo Flow
 ```
-[Intro Story 5s] → [Gameplay 50s] → [End Screen 5s] → [Loop to Intro]
+[Intro Story 7s] → [Gameplay 48s] → [End Screen 5s] → [Loop to Intro]
 ```
 
 ### Key Features for Demo
-1. ✅ Story-driven intro (manager sets up context)
-2. ✅ ONE BUTTON control (hold and release)
-3. ✅ Continuous hand animation (always in motion)
-4. ✅ Power-based throwing (no drag controls)
-5. ✅ Clear visual feedback (power meter, animations)
-6. ✅ Quick restart loop for replayability
+1. ✅ Cinematic story-driven intro with large manager character
+2. ✅ Multi-frame manager animation (7 frames for speaking, gesturing, emphasis)
+3. ✅ ONE BUTTON control (hold and release)
+4. ✅ Continuous hand animation (always in motion)
+5. ✅ Power-based throwing (no drag controls)
+6. ✅ Clear visual feedback (power meter, animations)
+7. ✅ Quick restart loop for replayability
 
 ### Animation Sequence Details
 ```
-INTRO (5 seconds):
+INTRO (7 seconds - Detailed Manager Animation):
   0.0s - Fade in office background
-  0.5s - Manager walks in from left (1s walk)
-  1.5s - Manager stops, places papers
-  2.0s - Speech bubble appears with text
-  3.5s - Speech bubble fades
-  4.0s - Manager walks out right (1s walk)
-  5.0s - Transition to gameplay
+  0.0-1.0s - Manager (1400x1000) slides in from left, fills 70% of screen
+  1.0-2.5s - Manager speaking animation (frames 02↔03 alternating, 0.2s each)
+  2.5-3.0s - Large speech bubble appears: "Prepare this report for tomorrow!"
+  3.0-4.5s - Manager raises hand with papers (frames 04↔05, 0.3s each)
+  4.5-5.5s - Manager shakes papers for emphasis (frame 06, rapid shake)
+  5.5-7.0s - Manager walks away to right (frame 07 slides out)
+  7.0s - Transition to gameplay, zoom to desk area
 
-GAMEPLAY LOOP:
+GAMEPLAY LOOP (48 seconds):
   - Hand continuously animates (1.5s cycle)
   - Player holds button to charge power
   - Release triggers throw
@@ -256,6 +350,8 @@ GAMEPLAY LOOP:
 
 END SCREEN (5s):
   - Show results
+  - Auto-restart to intro
+```
   - Auto-restart (no button needed)
 ```
 
