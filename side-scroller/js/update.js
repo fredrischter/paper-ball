@@ -1,25 +1,18 @@
 function update() {
-    if (!player || popupActive) return;
+    if (!player) return;
     
-    // Check for edge exits
-    if (player.x < -20) {
-        // Player exited left - show popup
-        showPopup(this);
-        return;
-    } else if (player.x > 820) {
-        // Player exited right - switch stage
-        if (currentStage === 1) {
-            switchToStage(this, 2);
-        } else if (currentStage === 2) {
-            switchToStage(this, 3);
-        }
+    // Check if player reached end of level
+    if (player.x > worldWidth - 100) {
+        // Player reached end - show completion message
+        handleLevelComplete(this);
         return;
     }
     
     // Check for jump button press (keyboard or mobile)
     const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
-    if (jumpPressed && !isJumping) {
+    if (jumpPressed && canJump && !isJumping) {
         performJump();
+        canJump = false; // Prevent double jump
     }
     
     // Reset mobile jump flag
@@ -27,16 +20,14 @@ function update() {
         mobileJumpPressed = false;
     }
     
-    // Get input from keyboard or mobile controls
+    // Get input from keyboard or mobile controls (only left/right for side-scroller)
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
-    const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
-    const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
     
-    // Movement speed (faster during jump)
-    const speed = isJumping ? 5 : 3;
+    // Movement speed
+    const speed = 5;
     
-    // Apply forces for movement (top-down style with no gravity)
+    // Apply horizontal movement
     if (leftPressed) {
         player.setVelocityX(-speed);
         currentDirection = 'left';
@@ -44,17 +35,8 @@ function update() {
         player.setVelocityX(speed);
         currentDirection = 'right';
     } else {
-        player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
-    }
-    
-    if (upPressed) {
-        player.setVelocityY(-speed);
-        currentDirection = 'up';
-    } else if (downPressed) {
-        player.setVelocityY(speed);
-        currentDirection = 'down';
-    } else {
-        player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
+        // Apply horizontal damping
+        player.setVelocityX(player.body.velocity.x * 0.85);
     }
     
     // Update animations
@@ -64,6 +46,9 @@ function update() {
 function performJump() {
     // Set jumping state
     isJumping = true;
+    
+    // Apply upward force
+    player.setVelocityY(-15);
     
     // Play jump animation for current direction
     const jumpAnim = `jump-${currentDirection}`;
@@ -76,12 +61,12 @@ function performJump() {
     
     player.once('animationcomplete', resetJump);
     
-    // Fallback timeout in case animation doesn't complete (e.g., player destroyed)
+    // Fallback timeout
     setTimeout(() => {
         if (isJumping) {
             isJumping = false;
         }
-    }, 1000); // 8 frames at 10fps = 800ms, so 1000ms is safe
+    }, 1000);
 }
 
 function updatePlayerAnimation() {
@@ -91,35 +76,45 @@ function updatePlayerAnimation() {
     if (isJumping) return;
     
     const velocityX = Math.abs(player.body.velocity.x);
-    const velocityY = Math.abs(player.body.velocity.y);
-    const isMoving = velocityX > 0.5 || velocityY > 0.5;
+    const isMoving = velocityX > 0.5;
     
-    // Control smoke particles based on movement
-    if (smokeParticles) {
-        if (isMoving) {
-            // Emit smoke particles when running
-            smokeParticles.startFollow(player, 0, 10); // Follow player with offset below
-            if (!smokeParticles.emitting) {
-                smokeParticles.start();
-            }
-        } else {
-            // Stop emitting when standing still
-            if (smokeParticles.emitting) {
-                smokeParticles.stop();
-            }
-        }
-    }
-    
-    // Walking animations
     if (isMoving) {
+        // Play walking animation for current direction
         const walkAnim = `walk-${currentDirection}`;
         if (player.anims.currentAnim?.key !== walkAnim) {
             player.anims.play(walkAnim, true);
         }
     } else {
-        // Standing
+        // Play standing animation
         if (player.anims.currentAnim?.key !== 'stand') {
             player.anims.play('stand', true);
         }
     }
+}
+
+function handleLevelComplete(scene) {
+    // Show completion message
+    const completeText = scene.add.text(camera.scrollX + 400, 300, 
+        `Level Complete!\nScore: ${score}\n\nPress SPACE to restart`, {
+        fontSize: '32px',
+        fill: '#fff',
+        stroke: '#000',
+        strokeThickness: 6,
+        align: 'center'
+    });
+    completeText.setOrigin(0.5);
+    completeText.setScrollFactor(0);
+    completeText.setDepth(1001);
+    
+    // Disable player
+    player.setVelocity(0, 0);
+    player.setStatic(true);
+    
+    // Restart on space
+    const restartHandler = (event) => {
+        if (event.code === 'Space') {
+            scene.scene.restart();
+        }
+    };
+    scene.input.keyboard.on('keydown', restartHandler);
 }

@@ -1,4 +1,4 @@
-// Game configuration
+// Game configuration - Side Scroller Variant
 const gameConfig = {
     type: Phaser.AUTO,
     parent: 'phaser-game',
@@ -13,7 +13,7 @@ const gameConfig = {
     physics: {
         default: 'matter',
         matter: {
-            gravity: { y: 0 }, // No gravity as requested
+            gravity: { y: 1 }, // Enable gravity for platformer
             debug: false
         }
     },
@@ -31,9 +31,12 @@ let jumpButton;
 let wasdKeys; // WASD keys
 let platforms;
 let isMobile;
+let ground;
 
-// Physics dolls (squares)
-let squareDolls = [];
+// Collectables
+let coins = [];
+let score = 0;
+let scoreText;
 
 // UI buttons
 let menuButton;
@@ -45,26 +48,24 @@ let actionButton;
 let backgroundMusic;
 let soundEnabled = true;
 
-// Movement state
+// Movement state (side-scroller: only left/right movement)
 let moveLeft = false;
 let moveRight = false;
-let moveUp = false;
-let moveDown = false;
 let mobileJumpPressed = false; // Track mobile jump button press
 
 // Animation state
-let currentDirection = 'down'; // down, up, left, right
+let currentDirection = 'right'; // right or left (no up/down in side-scroller)
 let isJumping = false;
+let canJump = false; // Can only jump when on ground
 
 // Stage management
 let currentStage = 1; // 1, 2, or 3
 let stageBackgrounds = {}; // Will hold background images
+let worldWidth = 4000; // Extended world width (5x viewport)
 
-// Popup state
+// Camera
+let camera;
+
+// Popup state (not used in side-scroller variant)
 let popupOverlay = null;
 let popupActive = false;
-
-// Particle systems
-let smokeParticles = null;     // Running smoke particles
-let sparkParticles = null;      // Collision spark particles
-let celebrationParticles = null; // Level complete celebration

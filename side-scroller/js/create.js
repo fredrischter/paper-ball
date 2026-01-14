@@ -1,26 +1,46 @@
 function create() {
-    // Add stage background
-    stageBackgrounds.bg1 = this.add.image(400, 300, 'bg-stage1').setDepth(-1);
-    stageBackgrounds.bg2 = this.add.image(400, 300, 'bg-stage2').setDepth(-1).setVisible(false);
-    stageBackgrounds.bg3 = this.add.image(400, 300, 'bg-stage3').setDepth(-1).setVisible(false);
+    // Set world bounds for extended horizontal scrolling
+    this.matter.world.setBounds(0, 0, worldWidth, 600);
     
-    // Create player sprite with Matter physics (heavier mass)
-    player = this.matter.add.sprite(400, 300, 'player', 0);
+    // Add tiled stage background
+    const bgCount = Math.ceil(worldWidth / 800);
+    for (let i = 0; i < bgCount; i++) {
+        stageBackgrounds[`bg${i}`] = this.add.image(400 + i * 800, 300, 'bg-stage1').setDepth(-1).setScrollFactor(0.5);
+    }
+    
+    // Create ground platform across the entire world
+    ground = this.matter.add.rectangle(worldWidth / 2, 550, worldWidth, 60, { 
+        isStatic: true,
+        label: 'ground'
+    });
+    
+    // Visual representation of ground
+    const groundGraphics = this.add.graphics();
+    groundGraphics.fillStyle(0x8B4513, 1);
+    groundGraphics.fillRect(0, 520, worldWidth, 80);
+    groundGraphics.setDepth(-0.5);
+    
+    // Create player sprite with Matter physics
+    player = this.matter.add.sprite(100, 400, 'player', 0);
     player.setFriction(0.1);
-    player.setMass(10); // Heavier mass so it can push the squares
-    player.setFixedRotation(); // Prevent rotation
+    player.setMass(1);
+    player.setFixedRotation();
+    player.setBounce(0.1);
     
-    // Store scene reference for later use
+    // Store scene reference
     player.scene = this;
+    
+    // Setup camera to follow player horizontally
+    camera = this.cameras.main;
+    camera.setBounds(0, 0, worldWidth, 600);
+    camera.startFollow(player, true, 0.1, 0);
+    camera.setFollowOffset(0, 0);
     
     // Create animations
     createAnimations(this);
     
-    // Create particle systems
-    createParticleSystems(this);
-    
-    // Create square dolls for current stage
-    createSquareDollsForStage(this, 1);
+    // Create collectables (coins) scattered throughout the level
+    createCollectables(this);
     
     // Set up keyboard input
     cursors = this.input.keyboard.createCursorKeys();
@@ -28,74 +48,93 @@ function create() {
     
     // WASD keys as alternative
     wasdKeys = {
-        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
         A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
     };
     
-    // Set up collision detection for sparks
+    // Set up collision detection
     this.matter.world.on('collisionstart', function(event) {
         event.pairs.forEach(pair => {
-            // Check if player hit a doll
+            // Check if player hit ground
             const { bodyA, bodyB } = pair;
-            if ((bodyA.gameObject === player && squareDolls.includes(bodyB.gameObject)) ||
-                (bodyB.gameObject === player && squareDolls.includes(bodyA.gameObject))) {
-                // Emit sparks at collision point
-                const hitX = (bodyA.position.x + bodyB.position.x) / 2;
-                const hitY = (bodyA.position.y + bodyB.position.y) / 2;
-                emitCollisionSparks(hitX, hitY);
+            if ((bodyA.gameObject === player && bodyB.label === 'ground') ||
+                (bodyB.gameObject === player && bodyA.label === 'ground')) {
+                canJump = true;
+            }
+            
+            // Check if player collected a coin
+            if (bodyA.gameObject === player || bodyB.gameObject === player) {
+                const coin = bodyA.gameObject === player ? bodyB.gameObject : bodyA.gameObject;
+                if (coin && coins.includes(coin)) {
+                    collectCoin(coin);
+                }
             }
         });
     });
     
-    // Create UI elements
+    // Create UI elements (fixed to camera)
     createUI(this);
+    
+    // Create score text
+    scoreText = this.add.text(16, 16, 'Score: 0', {
+        fontSize: '32px',
+        fill: '#fff',
+        stroke: '#000',
+        strokeThickness: 4
+    });
+    scoreText.setScrollFactor(0);
+    scoreText.setDepth(1000);
     
     // Initialize sound (Web Audio API)
     initSound(this);
 }
 
-function createParticleSystems(scene) {
-    // Smoke particles - emit when player is running
-    smokeParticles = scene.add.particles(0, 0, 'particle-smoke', {
-        speed: { min: 10, max: 30 },
-        angle: { min: 0, max: 360 },
-        scale: { start: 0.5, end: 0 },
-        alpha: { start: 0.6, end: 0 },
-        lifespan: 500,
-        frequency: 80,
-        emitting: false,
-        blendMode: 'ADD'
-    });
-    smokeParticles.setDepth(5);
+function createCollectables(scene) {
+    // Create coins scattered throughout the level
+    const coinCount = 50; // 50 coins across the level
+    const coinSpacing = worldWidth / (coinCount + 1);
     
-    // Spark particles - emit when hitting blocks
-    sparkParticles = scene.add.particles(0, 0, 'particle-spark', {
-        speed: { min: 50, max: 150 },
-        angle: { min: 0, max: 360 },
-        scale: { start: 1, end: 0.2 },
-        alpha: { start: 1, end: 0 },
-        lifespan: 300,
-        gravityY: 0,
-        emitting: false,
-        blendMode: 'ADD'
-    });
-    sparkParticles.setDepth(100);
+    for (let i = 0; i < coinCount; i++) {
+        const x = coinSpacing * (i + 1);
+        const y = Phaser.Math.Between(100, 400);
+        
+        // Create coin as a circle sprite (using square-doll texture temporarily)
+        const coin = scene.matter.add.sprite(x, y, 'square-doll', null, {
+            isStatic: false,
+            isSensor: true, // Pass through
+            label: 'coin'
+        });
+        coin.setScale(0.4);
+        coin.setTint(0xFFD700); // Gold color
+        coins.push(coin);
+        
+        // Add floating animation
+        scene.tweens.add({
+            targets: coin,
+            y: y - 10,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+}
+
+function collectCoin(coin) {
+    if (!coin || !coin.active) return;
     
-    // Celebration particles - shower when level completes
-    celebrationParticles = scene.add.particles(0, 0, 'particle-confetti', {
-        speed: { min: 100, max: 300 },
-        angle: { min: 240, max: 300 },
-        scale: { start: 1, end: 0.5 },
-        alpha: { start: 1, end: 0.5 },
-        lifespan: 2000,
-        gravityY: 0,
-        rotate: { min: 0, max: 360 },
-        emitting: false,
-        blendMode: 'NORMAL'
-    });
-    celebrationParticles.setDepth(200);
+    // Remove coin
+    const index = coins.indexOf(coin);
+    if (index > -1) {
+        coins.splice(index, 1);
+    }
+    coin.destroy();
+    
+    // Increase score
+    score += 10;
+    scoreText.setText('Score: ' + score);
+    
+    // Play collection sound (can be added later)
 }
 
 function emitCollisionSparks(x, y) {
