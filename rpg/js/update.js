@@ -13,25 +13,26 @@ function update() {
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
     
-    // Movement speed
-    const speed = 200; // pixels per second
+    // Movement speed - reduced for smoother, more controlled movement
+    const speed = 3; // Using velocity instead of setVelocityX for Matter.js consistency
     
-    // Horizontal movement (side-scrolling style)
+    // Horizontal movement (side-scrolling style) - using setVelocity for smooth movement
     if (leftPressed) {
-        player.setVelocityX(-speed);
+        player.setVelocity(-speed, player.body.velocity.y);
         currentDirection = 'left';
         if (player.anims) {
             player.anims.play('walk-left', true);
         }
     } else if (rightPressed) {
-        player.setVelocityX(speed);
+        player.setVelocity(speed, player.body.velocity.y);
         currentDirection = 'right';
         if (player.anims) {
             player.anims.play('walk-right', true);
         }
     } else {
-        player.setVelocityX(0);
-        if (player.anims && !player.anims.isPlaying) {
+        // Apply damping to horizontal movement when no keys pressed
+        player.setVelocity(player.body.velocity.x * 0.8, player.body.velocity.y);
+        if (player.anims && Math.abs(player.body.velocity.x) < 0.5) {
             player.anims.play(`stand-${currentDirection}`, true);
         }
     }

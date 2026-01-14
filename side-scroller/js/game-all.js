@@ -300,16 +300,25 @@ function createCollectables(scene) {
 function collectCoin(coin) {
     if (!coin || !coin.active) return;
     
-    // Remove coin
+    // Remove from coins array first
     const index = coins.indexOf(coin);
     if (index > -1) {
         coins.splice(index, 1);
     }
-    coin.destroy();
+    
+    // Stop any tweens on the coin before destroying
+    if (coin.scene && coin.scene.tweens) {
+        coin.scene.tweens.killTweensOf(coin);
+    }
     
     // Increase score
     score += 10;
-    scoreText.setText('Score: ' + score);
+    if (scoreText) {
+        scoreText.setText('Score: ' + score);
+    }
+    
+    // Destroy coin after everything else
+    coin.destroy();
     
     // Play collection sound (can be added later)
 }
@@ -863,4 +872,4 @@ function handleLevelComplete(scene) {
 
 // Initialize game
 const game = new Phaser.Game(gameConfig);
-console.log('side-scroller game initialized');
+console.log('Side-scroller game initialized');
