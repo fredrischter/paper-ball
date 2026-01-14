@@ -209,20 +209,36 @@ function createGround(scene, x, y, width, height) {
 }
 
 function createSlope(scene, x, y, width, height, upward) {
-    // Create a sloped platform using a rotated rectangle
-    const slope = scene.add.rectangle(x + width/2, y, width, height, 0x8b4513);
-    scene.physics.add.existing(slope, true);
+    // Create a sloped platform with actual physics slope
+    // Build slope as a series of small steps for realistic physics
+    const stepCount = Math.floor(width / 20); // 20px steps
+    const stepWidth = width / stepCount;
+    const stepHeight = height / stepCount;
     
-    // Rotate for slope effect
+    for (let i = 0; i < stepCount; i++) {
+        const stepX = x + i * stepWidth;
+        const stepY = upward ? (y - i * stepHeight) : (y + i * stepHeight);
+        
+        // Create small platform for each step
+        const step = scene.add.rectangle(
+            stepX + stepWidth/2, 
+            stepY + stepHeight/2, 
+            stepWidth + 1, // Slight overlap to prevent gaps
+            stepHeight + 10, // Extra height for solid collision
+            0x8b4513
+        );
+        scene.physics.add.existing(step, true);
+        terrain.push(step);
+    }
+    
+    // Also add visual slope overlay (non-collidable) for appearance
+    const slopeVisual = scene.add.rectangle(x + width/2, y, width, height, 0x8b4513, 0.5);
     const angle = upward ? -Math.atan(height / width) : Math.atan(height / width);
-    slope.rotation = angle;
-    
-    // Adjust y position to connect properly
+    slopeVisual.rotation = angle;
     const yAdjust = upward ? -height/2 : -height/2;
-    slope.y = y + yAdjust;
-    
-    terrain.push(slope);
-    return slope;
+    slopeVisual.y = y + yAdjust;
+    // Don't add physics to visual - it's just for looks
+    terrain.push(slopeVisual);
 }
 
 function setupPhysicsControls(scene) {

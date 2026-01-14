@@ -12,27 +12,42 @@ function update() {
     // Get input from keyboard or mobile controls
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
     const rightPressed = cursors.right.isDown || wasdKeys.D.isDown || moveRight;
+    const upPressed = cursors.up.isDown || wasdKeys.W.isDown || moveUp;
+    const downPressed = cursors.down.isDown || wasdKeys.S.isDown || moveDown;
     
     // Movement speed - reduced for smoother, more controlled movement
     const speed = 3; // Using velocity instead of setVelocityX for Matter.js consistency
     
-    // Horizontal movement (side-scrolling style) - using setVelocity for smooth movement
+    // Four-directional movement for RPG (top-down)
+    let velocityX = 0;
+    let velocityY = 0;
+    
     if (leftPressed) {
-        player.setVelocity(-speed, player.body.velocity.y);
+        velocityX = -speed;
         currentDirection = 'left';
-        if (player.anims) {
-            player.anims.play('walk-left', true);
-        }
     } else if (rightPressed) {
-        player.setVelocity(speed, player.body.velocity.y);
+        velocityX = speed;
         currentDirection = 'right';
+    }
+    
+    if (upPressed) {
+        velocityY = -speed;
+        currentDirection = 'up';
+    } else if (downPressed) {
+        velocityY = speed;
+        currentDirection = 'down';
+    }
+    
+    // Apply velocity
+    if (velocityX !== 0 || velocityY !== 0) {
+        player.setVelocity(velocityX, velocityY);
         if (player.anims) {
-            player.anims.play('walk-right', true);
+            player.anims.play(`walk-${currentDirection}`, true);
         }
     } else {
-        // Apply damping to horizontal movement when no keys pressed
-        player.setVelocity(player.body.velocity.x * 0.8, player.body.velocity.y);
-        if (player.anims && Math.abs(player.body.velocity.x) < 0.5) {
+        // Apply damping when no keys pressed
+        player.setVelocity(player.body.velocity.x * 0.8, player.body.velocity.y * 0.8);
+        if (player.anims && Math.abs(player.body.velocity.x) < 0.5 && Math.abs(player.body.velocity.y) < 0.5) {
             player.anims.play(`stand-${currentDirection}`, true);
         }
     }
