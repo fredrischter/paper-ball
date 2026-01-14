@@ -1,6 +1,6 @@
 # Game POC Collection
 
-A collection of 5 game proof-of-concepts built with **Phaser 3**, each demonstrating different game mechanics and genres.
+A collection of 6 game proof-of-concepts built with **Phaser 3**, each demonstrating different game mechanics and genres.
 
 ## 🎮 Game Variants
 
@@ -79,6 +79,23 @@ Physics-based 2D platformer:
 
 ---
 
+### 6. rpg/ - **Story Adventure RPG**
+Dialog-driven adventure with character customization:
+- Opening story dialog with changing scenes
+- Character selection screen
+- Clothing/style customization
+- Side-scrolling world with enterable houses
+- House interiors with NPCs
+- Dialog system triggered by NPC contact
+- Image changes during conversations
+
+**Type:** Story RPG / Visual Novel hybrid
+**Controls:** WASD/Arrows to move, UP to enter, contact NPCs for dialog
+**Stages:** Character select → Open world → House interiors
+**Key Feature:** Dialog system with story scenes, house exploration
+
+---
+
 ## 🚀 Quick Start
 
 Each game can be run independently:
@@ -103,6 +120,7 @@ paper-ball/
 ├── admin-game/           ← Management (click placement)
 ├── tower-defense/        ← TD (monsters, towers)
 ├── physics-adventure/    ← Platformer (momentum, terrain)
+├── rpg/                  ← RPG (dialog, houses, NPCs)
 └── GAME-VARIANTS.md      ← This file
 ```
 
@@ -115,17 +133,21 @@ Each folder is self-contained with:
 
 ## 🎯 Comparison Matrix
 
-| Feature | game-poc | side-scroller | admin-game | tower-defense | physics-adventure |
-|---------|----------|---------------|------------|---------------|-------------------|
-| **Character** | ✅ | ✅ | ❌ | ❌ | ✅ |
-| **Movement** | Top-down | Side-scroll | None | None | Side-scroll |
-| **Physics** | Matter.js | Matter.js | None | None | Arcade |
-| **Scrolling** | ❌ | ✅ | ❌ | ❌ | ✅ |
-| **Collectables** | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **Enemies** | ❌ | ❌ | ❌ | ✅ | ❌ |
-| **Placement** | ❌ | ❌ | ✅ | ✅ | ❌ |
-| **Stages** | 3 | 3 | 1 | 3 | 3 |
-| **Gravity** | No | No | N/A | N/A | Yes |
+| Feature | game-poc | side-scroller | admin-game | tower-defense | physics-adventure | rpg |
+|---------|----------|---------------|------------|---------------|-------------------|-----|
+| **Character** | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| **Movement** | Top-down | Side-scroll | None | None | Side-scroll | Side-scroll |
+| **Physics** | Matter.js | Matter.js | None | None | Arcade | Matter.js |
+| **Scrolling** | ❌ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| **Collectables** | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Enemies** | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **Placement** | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| **Dialog** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **NPCs** | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
+| **Customization** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Interiors** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Stages** | 3 | 3 | 1 | 3 | 3 | Multiple |
+| **Gravity** | No | No | N/A | N/A | Yes | No |
 
 ## 🛠️ Customization
 
@@ -164,6 +186,7 @@ Customize per-variant by editing the PNG files in each `assets/` folder.
 - **admin-game:** City-builders, RTS, management sims
 - **tower-defense:** TD games, strategic placement
 - **physics-adventure:** Momentum platformers, physics puzzles
+- **rpg:** Story-driven games, visual novels, adventure RPGs
 
 ---
 
