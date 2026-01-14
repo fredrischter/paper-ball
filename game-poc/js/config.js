@@ -17,11 +17,7 @@ const gameConfig = {
             debug: false
         }
     },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
+    scene: [BootScene, GameScene]
 };
 
 // Game state variables

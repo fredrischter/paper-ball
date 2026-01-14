@@ -1,3 +1,48 @@
+// Boot Scene - Shows loading screen while assets load
+class BootScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'BootScene' });
+
+    preload() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        this.add.rectangle(width / 2, height / 2, width, height, 0x2d5016);
+        const loadingText = this.add.text(width / 2, height / 2 - 50, 'Loading...', {
+            font: '32px Arial',
+            fill: '#ffffff'
+
+        const progressBarBg = this.add.rectangle(width / 2, height / 2 + 20, 400, 30, 0x555555);
+        const progressBar = this.add.rectangle(width / 2 - 200, height / 2 + 20, 0, 26, 0xffffff);
+        progressBar.setOrigin(0, 0.5);
+
+        const progressText = this.add.text(width / 2, height / 2 + 60, '0%', {
+            font: '20px Arial',
+            fill: '#ffffff'
+
+        this.load.on('progress', (value) => {
+            progressBar.width = 400 * value;
+            progressText.setText(Math.floor(value * 100) + '%');
+
+        this.load.on('complete', () => {
+            loadingText.setText('Ready!');
+            setTimeout(() => {
+                this.scene.start('GameScene');
+
+        preload.call(this);
+}
+
+class GameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'GameScene' });
+
+    create() {
+        create.call(this);
+
+    update() {
+        update.call(this);
+}
+
 // Game configuration
 const gameConfig = {
     type: Phaser.AUTO,
@@ -9,19 +54,12 @@ const gameConfig = {
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: 800,
         height: 600
-    },
     physics: {
         default: 'matter',
         matter: {
             gravity: { y: 0 }, // No gravity as requested
             debug: false
-        }
-    },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
+    scene: [BootScene, GameScene] // OLD: {
 };
 
 // Game state variables
@@ -76,19 +114,16 @@ function preload() {
     this.load.spritesheet('player', 'assets/spritesheets/character.png', {
         frameWidth: 32,
         frameHeight: 48
-    });
     
     // Load UI buttons spritesheet (7 frames: menu, sound, dpad-up, dpad-down, dpad-left, dpad-right, action)
     this.load.spritesheet('ui-buttons', 'assets/spritesheets/ui-buttons.png', {
         frameWidth: 64,
         frameHeight: 64
-    });
     
     // Load popup buttons spritesheet (2 frames: OK, Cancel)
     this.load.spritesheet('popup-buttons', 'assets/spritesheets/popup-buttons.png', {
         frameWidth: 90,
         frameHeight: 50
-    });
     
     // Load stage backgrounds
     this.load.image('bg-stage1', 'assets/images/stage1-bg.png');
@@ -150,7 +185,6 @@ function create() {
         A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
-    };
     
     // Set up collision detection for sparks
     this.matter.world.on('collisionstart', function(event) {
@@ -163,9 +197,6 @@ function create() {
                 const hitX = (bodyA.position.x + bodyB.position.x) / 2;
                 const hitY = (bodyA.position.y + bodyB.position.y) / 2;
                 emitCollisionSparks(hitX, hitY);
-            }
-        });
-    });
     
     // Create UI elements
     createUI(this);
@@ -185,7 +216,6 @@ function createParticleSystems(scene) {
         frequency: 80,
         emitting: false,
         blendMode: 'ADD'
-    });
     smokeParticles.setDepth(5);
     
     // Spark particles - emit when hitting blocks
@@ -198,7 +228,6 @@ function createParticleSystems(scene) {
         gravityY: 0,
         emitting: false,
         blendMode: 'ADD'
-    });
     sparkParticles.setDepth(100);
     
     // Celebration particles - shower when level completes
@@ -212,7 +241,6 @@ function createParticleSystems(scene) {
         rotate: { min: 0, max: 360 },
         emitting: false,
         blendMode: 'NORMAL'
-    });
     celebrationParticles.setDepth(200);
 }
 
@@ -245,7 +273,6 @@ function startCelebration(scene) {
             quantity: 3,
             frequency: 50,
             blendMode: 'NORMAL'
-        });
         emitter.setDepth(200);
         
         // Stop after 2 seconds
@@ -253,9 +280,6 @@ function startCelebration(scene) {
             emitter.stop();
             scene.time.delayedCall(2500, () => {
                 emitter.destroy();
-            });
-        });
-    }
 }
 
 function createAnimations(scene) {
@@ -264,7 +288,6 @@ function createAnimations(scene) {
         key: 'stand',
         frames: [{ key: 'player', frame: 0 }],
         frameRate: 10
-    });
     
     // Walking animations (8 frames each)
     const directions = ['down', 'left', 'right', 'up'];
@@ -275,11 +298,8 @@ function createAnimations(scene) {
             frames: scene.anims.generateFrameNumbers('player', { 
                 start: 1 + index * 8, 
                 end: 1 + index * 8 + 7 
-            }),
             frameRate: 10,
             repeat: -1
-        });
-    });
     
     // Jumping animations (8 frames each)
     directions.forEach((dir, index) => {
@@ -288,11 +308,8 @@ function createAnimations(scene) {
             frames: scene.anims.generateFrameNumbers('player', { 
                 start: 33 + index * 8, 
                 end: 33 + index * 8 + 7 
-            }),
             frameRate: 10,
             repeat: 0
-        });
-    });
 }
 
 function createUI(scene) {
@@ -305,7 +322,6 @@ function createUI(scene) {
     menuButton.on('pointerdown', () => {
         console.log('Menu clicked');
         alert('Menu\n\nControls:\n- Arrow keys or WASD to move\n- Space to jump\n- Click sound button to toggle music');
-    });
     
     // Top-right: Sound button
     soundButton = scene.add.sprite(760, 40, 'ui-buttons', 1)
@@ -316,7 +332,6 @@ function createUI(scene) {
     soundButton.on('pointerdown', () => {
         toggleSound();
         updateSoundButton();
-    });
     
     // Middle-top: Score/title text
     const titleText = scene.add.text(400, 30, 'Game POC - Character Demo', {
@@ -324,7 +339,6 @@ function createUI(scene) {
         fill: '#fff',
         stroke: '#000',
         strokeThickness: 4
-    }).setOrigin(0.5, 0).setScrollFactor(0);
     
     // Middle-bottom: Instructions text
     const instructionsText = scene.add.text(400, 560, 
@@ -334,12 +348,10 @@ function createUI(scene) {
             fill: '#fff',
             stroke: '#000',
             strokeThickness: 3
-        }).setOrigin(0.5, 0).setScrollFactor(0);
     
     // Mobile controls
     if (isMobile) {
         createMobileControls(scene);
-    }
 }
 
 function createMobileControls(scene) {
@@ -398,11 +410,9 @@ function createMobileControls(scene) {
         fontSize: '14px',
         fill: '#fff',
         fontStyle: 'bold'
-    }).setOrigin(0.5).setScrollFactor(0);
     
     actionButton.on('pointerdown', () => {
         mobileJumpPressed = true;
-    });
 }
 
 function initSound(scene) {
@@ -436,29 +446,22 @@ function initSound(scene) {
             // Loop
             if (soundEnabled) {
                 setTimeout(window.playBackgroundMusic, 2000);
-            }
-        };
         
         if (soundEnabled) {
             window.playBackgroundMusic();
-        }
-    } catch (e) {
         console.log('Web Audio API not supported');
-    }
 }
 
 function toggleSound() {
     soundEnabled = !soundEnabled;
     if (soundEnabled && window.playBackgroundMusic) {
         window.playBackgroundMusic();
-    }
 }
 
 function updateSoundButton() {
     // Visual feedback for sound state
     if (soundButton) {
         soundButton.setAlpha(soundEnabled ? 1.0 : 0.5);
-    }
 }
 
 function showPopup(scene) {
@@ -477,12 +480,10 @@ function showPopup(scene) {
         fontSize: '32px',
         fill: '#fff',
         fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(1002);
     
     const messageText = scene.add.text(400, 260, 'You went off the left edge!', {
         fontSize: '20px',
         fill: '#ccc'
-    }).setOrigin(0.5).setDepth(1002);
     
     // Create OK button
     const okButton = scene.add.sprite(300, 360, 'popup-buttons', 0)
@@ -494,7 +495,6 @@ function showPopup(scene) {
         fontSize: '20px',
         fill: '#fff',
         fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(1003);
     
     // Create Cancel button
     const cancelButton = scene.add.sprite(500, 360, 'popup-buttons', 1)
@@ -506,7 +506,6 @@ function showPopup(scene) {
         fontSize: '20px',
         fill: '#fff',
         fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(1003);
     
     // Store popup elements
     popupOverlay = {
@@ -518,7 +517,6 @@ function showPopup(scene) {
         okText,
         cancelButton,
         cancelText
-    };
     
     // Close popup function
     const closePopup = () => {
@@ -539,7 +537,6 @@ function showPopup(scene) {
         
         // Reset game to beginning
         resetGame(scene);
-    };
     
     // Button event handlers
     okButton.on('pointerdown', closePopup);
@@ -588,8 +585,6 @@ function switchToStage(scene, stageNumber) {
             // Remove old square dolls and create new ones for stage 2
             destroySquareDolls();
             createSquareDollsForStage(scene, 2);
-        });
-    } else if (stageNumber === 3) {
         // Trigger celebration for completing stage 2
         startCelebration(scene);
         
@@ -597,8 +592,6 @@ function switchToStage(scene, stageNumber) {
         scene.time.delayedCall(2000, () => {
             // Show interstitial
             showInterstitial(scene);
-        });
-    }
 }
 
 function createSquareDollsForStage(scene, stage) {
@@ -618,15 +611,12 @@ function createSquareDollsForStage(scene, stage) {
         doll.setFixedRotation(); // Prevent rotation
         
         squareDolls.push(doll);
-    });
 }
 
 function destroySquareDolls() {
     squareDolls.forEach(doll => {
         if (doll && doll.scene) {
             doll.destroy();
-        }
-    });
     squareDolls = [];
 }
 
@@ -638,7 +628,6 @@ function showInterstitial(scene) {
     scene.time.delayedCall(3000, () => {
         interstitial.destroy();
         resetGame(scene);
-    });
 }
 function update() {
     if (!player || popupActive) return;
@@ -648,26 +637,20 @@ function update() {
         // Player exited left - show popup
         showPopup(this);
         return;
-    } else if (player.x > 820) {
         // Player exited right - switch stage
         if (currentStage === 1) {
             switchToStage(this, 2);
-        } else if (currentStage === 2) {
             switchToStage(this, 3);
-        }
         return;
-    }
     
     // Check for jump button press (keyboard or mobile)
     const jumpPressed = Phaser.Input.Keyboard.JustDown(jumpButton) || mobileJumpPressed;
     if (jumpPressed && !isJumping) {
         performJump();
-    }
     
     // Reset mobile jump flag
     if (mobileJumpPressed) {
         mobileJumpPressed = false;
-    }
     
     // Get input from keyboard or mobile controls
     const leftPressed = cursors.left.isDown || wasdKeys.A.isDown || moveLeft;
@@ -682,22 +665,16 @@ function update() {
     if (leftPressed) {
         player.setVelocityX(-speed);
         currentDirection = 'left';
-    } else if (rightPressed) {
         player.setVelocityX(speed);
         currentDirection = 'right';
-    } else {
         player.setVelocityX(player.body.velocity.x * 0.9); // Apply damping
-    }
     
     if (upPressed) {
         player.setVelocityY(-speed);
         currentDirection = 'up';
-    } else if (downPressed) {
         player.setVelocityY(speed);
         currentDirection = 'down';
-    } else {
         player.setVelocityY(player.body.velocity.y * 0.9); // Apply damping
-    }
     
     // Update animations
     updatePlayerAnimation();
@@ -714,7 +691,6 @@ function performJump() {
     // Reset jumping state after animation completes
     const resetJump = () => {
         isJumping = false;
-    };
     
     player.once('animationcomplete', resetJump);
     
@@ -722,8 +698,6 @@ function performJump() {
     setTimeout(() => {
         if (isJumping) {
             isJumping = false;
-        }
-    }, 1000); // 8 frames at 10fps = 800ms, so 1000ms is safe
 }
 
 function updatePlayerAnimation() {
@@ -743,27 +717,18 @@ function updatePlayerAnimation() {
             smokeParticles.startFollow(player, 0, 10); // Follow player with offset below
             if (!smokeParticles.emitting) {
                 smokeParticles.start();
-            }
-        } else {
             // Stop emitting when standing still
             if (smokeParticles.emitting) {
                 smokeParticles.stop();
-            }
-        }
-    }
     
     // Walking animations
     if (isMoving) {
         const walkAnim = `walk-${currentDirection}`;
         if (player.anims.currentAnim?.key !== walkAnim) {
             player.anims.play(walkAnim, true);
-        }
-    } else {
         // Standing
         if (player.anims.currentAnim?.key !== 'stand') {
             player.anims.play('stand', true);
-        }
-    }
 }
 // Initialize the Phaser game
 const game = new Phaser.Game(gameConfig);
