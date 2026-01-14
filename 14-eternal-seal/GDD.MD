@@ -33,10 +33,13 @@ A narrative-driven strategy game about forging pacts with demons, angels, and an
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (2 seconds)
-- Dark ritual chamber
-- "A desperate hour approaches..." text
-- Your avatar appears, weak and powerless
+### Intro Sequence (4 seconds - Story setup)
+- Ritual chamber candles flicker to life
+- Ancient book opens, symbols glow
+- Three entity silhouettes appear: Demon, Angel, Ancient One
+- Voice whispers: "Choose your fate..."
+- Text: "Power demands sacrifice"
+- **No player input required** - Auto-advances to first pact offer
 
 ### Game Screen (54 seconds)
 - **Layout**:

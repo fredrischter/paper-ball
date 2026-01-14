@@ -34,10 +34,12 @@ All images are PNG format with transparency where applicable.
 
 ## Game Flow (1-Minute Demo)
 
-### 1. Start Screen (2 seconds)
-- Display world map
-- "You are managing: NATION ALPHA"
-- Starting stats briefly shown
+### 1. Intro Sequence (3 seconds - Story setup)
+- World map zooms to your nation
+- Advisor appears: "Mr. President, we have a situation..."
+- Crisis indicators flash on borders
+- Text: "Your decisions will shape history"
+- **No player input required** - Auto-advances to first decision
 - **Transition**: Fade to Game Screen
 
 ### 2. Game Screen (Main Gameplay - 54 seconds)

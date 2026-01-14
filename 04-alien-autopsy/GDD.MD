@@ -34,10 +34,13 @@ All images are PNG format with transparency where applicable.
 
 ## Game Flow (1-Minute Demo)
 
-### 1. Start Screen (Auto-skip - 1 second)
-- Brief flash of facility logo
-- "NEW SPECIMEN ARRIVED" text
-- **Transition**: Immediate fade to Game Screen
+### 1. Intro Sequence (3 seconds - Story setup)
+- Facility alarm blares
+- Containment pod opens with steam
+- Alien body revealed on autopsy table
+- Radio voice: "New specimen. Proceed with analysis."
+- Tools appear on tray
+- **No player input required** - Auto-advances to gameplay
 
 ### 2. Game Screen (Main Gameplay - 54 seconds)
 - **Layout**:

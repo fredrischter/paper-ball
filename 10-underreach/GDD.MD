@@ -31,10 +31,13 @@ A tactical exploration game set in enclosed underground environments where playe
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (1 second)
-- "EXPEDITION BEGINS" - Brief mission text
-- Show: 3 team members, starting oxygen: 100%
-
+### Intro Sequence (3 seconds - Story setup)
+- Dark cave entrance, headlamp beam pierces darkness
+- Radio: "Team Alpha, you're cleared for descent"
+- Team rappels down into depths
+- Oxygen meter appears: 100%
+- Text: "Reach 300m and return alive"
+- **No player input required** - Auto-advances to gameplay
 ### Game Screen (54 seconds)
 - **Layout**:
   - Main view: Cave cross-section (side view)

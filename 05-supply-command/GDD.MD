@@ -36,10 +36,12 @@ All images are PNG format with transparency where applicable.
 
 ## Game Flow (1-Minute Demo)
 
-### 1. Start Screen (2 seconds - Brief intro)
-- Mission briefing: "FRONTLINE REQUIRES SUPPLIES"
-- Show: HQ, 3 frontline units, 1000 supply units available
-- **Transition**: Quick fade to Game Screen
+### 1. Intro Sequence (3 seconds - Story setup)
+- War room map with frontline markers
+- Radio crackling: "Command, our units are running dry!"
+- General appears: "Get supplies to the front. NOW!"
+- Map zooms to your HQ and supply routes
+- **No player input required** - Auto-advances to gameplay
 
 ### 2. Game Screen (Main Gameplay - 53 seconds)
 - **Layout**:

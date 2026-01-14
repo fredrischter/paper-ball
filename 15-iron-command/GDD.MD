@@ -39,10 +39,13 @@ A large-scale war strategy game emphasizing logistics, infrastructure, disease, 
 
 ## Game Flow (1-Minute Demo)
 
-### Start Screen (2 seconds)
-- Military-style briefing
-- "OPERATION: IRON COMMAND"
-- "Objective: Hold the line for 60 seconds"
+### Intro Sequence (3 seconds - Story setup)
+- War room, officers around strategic map
+- Radio: "Enemy forces massing at all fronts!"
+- Commander: "Hold the line. Reinforcements in 60 seconds."
+- Map zooms to your defensive positions
+- Text: "HOLD OR DIE"
+- **No player input required** - Auto-advances to gameplay
 - Starting forces: 2 Infantry, 1 Tank, 1 Artillery
 
 ### Game Screen (54 seconds)

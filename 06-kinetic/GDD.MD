@@ -34,10 +34,12 @@ All images are PNG format with transparency where applicable.
 
 ## Game Flow (1-Minute Demo)
 
-### 1. Start Screen (Auto-skip to tutorial)
-- Brief flash: "FLOW STATE PROTOCOL INITIATED"
-- **Transition**: Immediate to gameplay with first prompt
-
+### 1. Intro Sequence (2 seconds - Story setup)
+- Combat arena materializes around player
+- Voice: "Flow State Protocol Activated"
+- Enemy silhouettes appear in distance
+- Tutorial prompts activate
+- **No player input required** - Auto-advances to gameplay
 ### 2. Game Screen (Main Gameplay - 56 seconds)
 - **Layout**:
   - Center: Combat arena (main play area)
