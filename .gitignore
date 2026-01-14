@@ -7,3 +7,11 @@ build/
 coverage/
 screenshots/
 *.tmp
+
+# Verification and build files
+verify-games.js
+rebuild-variant.sh
+verification-screenshots/
+test-all-games.js
+**/rebuild-*.sh
+
