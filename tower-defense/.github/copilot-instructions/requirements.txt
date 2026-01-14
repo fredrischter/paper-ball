@@ -1,0 +1,265 @@
+# Game POC - Complete Requirements
+
+## Core Requirements
+
+### Game Engine
+- Use Phaser 3.70.0 or higher
+- Bundle locally (no CDN dependencies for production)
+- Game engine file should be in `lib/phaser.min.js`
+
+### Canvas and Display
+- Canvas dimensions: 800x600 pixels
+- Responsive scaling mode: FIT
+- Auto-center: CENTER_BOTH
+- Must be playable on any screen size (mobile and desktop)
+
+### Physics System
+- Physics engine: Matter.js (Box2D-like, built into Phaser)
+- Gravity: 0 (top-down movement style)
+- Player mass: 10 units (heavier)
+- Doll mass: 3 units (lighter, can be pushed)
+- Fixed rotation: true (prevent object spinning)
+- Player friction: 0.1 (smooth movement)
+- Doll friction: 0.5 (more resistance)
+- Doll bounce: 0.2 (slight bounce effect)
+
+### UI Elements and Positioning
+
+#### Required UI Elements
+1. **Top-Left Corner**: Menu button (hamburger icon)
+2. **Top-Right Corner**: Sound toggle button (speaker icon)
+3. **Middle-Top**: Game title text
+4. **Middle-Bottom**: Control instructions text
+5. **Bottom-Left (Mobile Only)**: D-pad controls (4-directional)
+6. **Bottom-Right (Mobile Only)**: Action button (jump/action)
+
+#### UI Requirements
+- All buttons must be loaded from spritesheet
+- Buttons should be 64x64 pixels each
+- Hamburger menu: 3 horizontal lines
+- Sound button: Speaker icon with toggle states
+- D-pad: Up, Down, Left, Right arrows
+- Action button: Circular with text
+
+### Sprite and Animation Requirements
+
+#### Character Sprite
+- Frame size: 32x48 pixels per frame
+- Total frames: 65 frames
+
+#### Frame Breakdown
+1. **Standing**: 1 frame
+2. **Walking Down**: 8 frames
+3. **Walking Left**: 8 frames
+4. **Walking Right**: 8 frames
+5. **Walking Up**: 8 frames
+6. **Jumping Down**: 8 frames
+7. **Jumping Left**: 8 frames
+8. **Jumping Right**: 8 frames
+9. **Jumping Up**: 8 frames
+
+#### Animation Properties
+- Frame rate: 10 fps
+- Repeat: -1 for walking animations (loop)
+- Repeat: 0 for jumping animations (play once)
+- Direction transitions: Smooth blending between animations
+
+### Input Controls
+
+#### Keyboard Controls
+- Arrow keys: Directional movement
+- WASD keys: Alternative directional movement
+- Space bar: Action/jump button
+- Keys must be cached at initialization (not recreated per frame)
+
+#### Mobile/Touch Controls
+- D-pad: 4-directional touch buttons (up, down, left, right)
+- Action button: Touch button for jump/action
+- Auto-detection: Show only on mobile devices
+- Mobile detection regex: `/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i`
+
+### Movement System
+- Movement type: Top-down 4-directional
+- Movement speed: 3 units per frame
+- Damping factor: 0.9 (when no input)
+- No gravity (gravity.y = 0)
+- Edge detection thresholds:
+  - Left edge: x < -20
+  - Right edge: x > 820
+
+### Multi-Stage System
+
+#### Stage 1
+- Background: Green gradient (#2d5a3d to #1a3d2d)
+- Dolls: 2 square dolls at positions (250, 200) and (550, 400)
+- Player start position: (100, 300)
+
+#### Stage 2
+- Background: Brown/orange gradient (#5a3d2d to #3d2d1a)
+- Dolls: 2 square dolls at positions (250, 200) and (550, 400)
+- Player start position: (50, 300) - left side of screen
+
+#### Stage 3 (Interstitial)
+- Full-screen image with radial gradient
+- Display duration: 3 seconds
+- Auto-transition back to Stage 1
+- Colors: Gold (#FFD700) → Orange (#FFA500) → Tomato (#FF6347)
+- Text: "Stage Transition" and "Loading..."
+
+### Stage Transitions
+
+#### Left Edge Exit
+1. Player x < -20
+2. Show popup overlay
+3. Pause player movement
+4. Display "Demonstration Pop-up" message
+5. Show OK and Cancel buttons
+6. Both buttons close popup and reset to Stage 1
+
+#### Right Edge Exit from Stage 1
+1. Player x > 820
+2. Switch to Stage 2
+3. Player repositioned at x=50, y=300
+4. Change background to Stage 2
+5. Destroy old dolls, create new dolls
+
+#### Right Edge Exit from Stage 2
+1. Player x > 820
+2. Show interstitial (Stage 3)
+3. Display for 3 seconds
+4. Auto-return to Stage 1
+5. Player reset to x=100, y=300
+
+### Popup Overlay Requirements
+- Overlay: Semi-transparent black (0.7 alpha)
+- Popup background: From spritesheet (500x300 pixels)
+- Border: 4px white stroke
+- Title: "Demonstration Pop-up" (32px bold)
+- Message: "You went off the left edge!" (20px)
+- OK button: Green (#4CAF50), 90x50 pixels, from spritesheet
+- Cancel button: Red (#f44336), 90x50 pixels, from spritesheet
+- Both buttons: Same action (close and reset)
+- Block player input while active
+
+### Square Dolls Requirements
+- Size: 50x50 pixels
+- Color: Red gradient (#FF6B6B to #C92A2A)
+- Features: Simple face (eyes and mouth)
+- Border: 2px black
+- Count: 2 per stage
+- Physics enabled: Yes
+- Can be pushed: Yes
+- Recreate on stage transition: Yes
+
+### Audio Requirements
+- Background music: Web Audio API generated tones
+- Musical notes: A (440Hz), B (494Hz), C (523Hz), D (587Hz), E (659Hz)
+- Loop interval: 500ms between notes
+- Toggle button: Top-right corner
+- Default state: Enabled
+- Volume: 0.05 (5% volume)
+- Sound effect on jump: Square wave, 400Hz → 200Hz over 0.1s
+
+### Procedural Generation Requirements
+
+All sprites should be procedurally generated using Canvas API:
+
+#### Character Sprite Generation
+- Head: Skin tone (#FFD1A3), 12x12 pixels
+- Body: Blue (#4169E1), 16x18 pixels
+- Arms: Skin tone, 6x12 pixels each
+- Legs: Dark gray (#4A4A4A), 5x13 pixels each
+- Leg animation: Sine wave offset for walking
+- Jump animation: Vertical offset with sine curve
+
+#### Stage Background Generation
+- Canvas size: 800x600 pixels
+- Gradient type: Linear vertical
+- Decorative elements: 20 random white rectangles (10-40px, 0.1 alpha)
+
+#### UI Button Generation
+- Menu button: Dark background with 3 white horizontal bars
+- Sound button: Dark background with speaker icon
+- D-pad buttons: Dark background with arrow shapes
+- Button base color: #333 or #444
+- Button border: 2-4px white
+
+### File Structure Requirements
+```
+game-poc/
+├── index.html              # Main entry point
+├── package.json            # NPM configuration
+├── package-lock.json       # NPM lock file
+├── jest.config.js          # Jest test configuration
+├── requirements.txt        # This file
+├── README.md               # Documentation
+├── .gitignore              # Git ignore rules
+├── lib/
+│   └── phaser.min.js       # Phaser 3.70.0 (local bundle)
+├── js/
+│   ├── config.js           # Game configuration
+│   ├── preload.js          # Asset loading & sprite generation
+│   ├── create.js           # Scene setup & initialization
+│   ├── update.js           # Game loop & input handling
+│   ├── game.js             # Main game initialization
+│   └── game-all.js         # Combined build (generated)
+├── tests/
+│   ├── config.test.js      # Configuration tests
+│   ├── stage.test.js       # Stage management tests
+│   ├── physics.test.js     # Physics system tests
+│   ├── popup.test.js       # Popup overlay tests
+│   ├── animation.test.js   # Animation tests
+│   ├── input.test.js       # Input handling tests
+│   └── README.md           # Test documentation
+└── assets/
+    ├── spritesheets/       # Placeholder for external sprites
+    └── audio/              # Placeholder for external audio
+```
+
+### Testing Requirements
+- Test framework: Jest
+- Coverage target: >80% for statements, branches, functions, lines
+- Test files: One per major component
+- Test naming: `*.test.js`
+- Total tests: Minimum 70+ tests
+- All tests must pass
+
+### Performance Requirements
+- No object creation in game loop (update function)
+- Cache all input keys at initialization
+- Reuse sprite objects where possible
+- Destroy and recreate objects only on stage transitions
+- Frame rate target: 60 FPS
+- Memory: No memory leaks from undestroyed objects
+
+### Browser Compatibility
+- Chrome: Latest 2 versions
+- Firefox: Latest 2 versions
+- Safari: Latest 2 versions
+- Edge: Latest 2 versions
+- Mobile browsers: iOS Safari, Chrome Mobile
+
+### Responsive Design
+- Desktop: Show keyboard instructions
+- Mobile: Show D-pad and action button
+- Tablet: Adaptive (detect as mobile)
+- Scaling: Maintain aspect ratio
+- Min resolution: 375x667 (iPhone SE)
+- Max resolution: Unlimited (scales to fit)
+
+### Code Quality Requirements
+- Modular structure: Separate files for each concern
+- No global variables except game state
+- Clear function names
+- Comments for complex logic
+- Consistent code style
+- No console errors
+- No unused variables
+- Pass all linting rules
+
+### Documentation Requirements
+- README.md: Setup, usage, features
+- requirements.txt: This file
+- Test documentation: tests/README.md
+- Code comments: Explain non-obvious logic
+- Function documentation: JSDoc style recommended

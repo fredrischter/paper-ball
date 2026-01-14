@@ -1,0 +1,363 @@
+# To-Remove List for Creating a Blank Game
+
+This document lists all POC-specific features and files that should be removed to create a clean, blank game template ready for new game development.
+
+## Files to Remove Completely
+
+### Demo-Specific Code Files
+```
+js/preload.js           # Contains POC sprite generation
+js/create.js            # Contains POC-specific setup
+js/update.js            # Contains POC-specific game logic
+js/game-all.js          # Combined file (regenerate after changes)
+```
+
+### Test Files (If Starting Fresh)
+```
+tests/config.test.js
+tests/stage.test.js
+tests/physics.test.js
+tests/popup.test.js
+tests/animation.test.js
+tests/input.test.js
+tests/README.md
+jest.config.js          # Unless keeping testing framework
+```
+
+### Documentation Files (POC-Specific)
+```
+requirements.txt        # POC-specific requirements
+README.md               # POC-specific documentation (replace with new)
+.github/copilot-instructions/requirements.txt  # This file
+.github/copilot-instructions/implementation-guidelines.txt
+.github/copilot-instructions/to-remove.txt
+```
+
+## Code Sections to Remove from Remaining Files
+
+### In config.js - Remove These Variables
+
+```javascript
+// Remove POC-specific state
+let squareDolls = [];          // Square doll array
+let currentStage = 1;          // Stage system
+let stageBackgrounds = {};     // Stage backgrounds
+let popupOverlay = null;       // Popup system
+let popupActive = false;       // Popup state
+
+// Remove demo movement flags
+let moveLeft = false;
+let moveRight = false;
+let moveUp = false;
+let moveDown = false;
+
+// Remove demo animation state
+let currentDirection = 'down';
+let isJumping = false;
+```
+
+### Keep These in config.js
+
+```javascript
+// Keep core game configuration
+const gameConfig = {
+    type: Phaser.AUTO,
+    parent: 'phaser-game',
+    width: 800,
+    height: 600,
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 800,
+        height: 600
+    },
+    physics: {
+        default: 'matter',  // or 'arcade' if needed
+        matter: {
+            gravity: { y: 0 }  // Adjust for your game
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+// Keep essential state
+let player;
+let cursors;
+let isMobile;
+```
+
+### Create New Minimal preload.js
+
+Replace entire preload.js with:
+```javascript
+function preload() {
+    // Detect if mobile
+    isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Load your game assets here
+    // this.load.image('sprite', 'path/to/sprite.png');
+    // this.load.spritesheet('character', 'path/to/spritesheet.png', {
+    //     frameWidth: 32,
+    //     frameHeight: 48
+    // });
+}
+```
+
+### Create New Minimal create.js
+
+Replace entire create.js with:
+```javascript
+function create() {
+    // Set background color
+    this.cameras.main.setBackgroundColor('#2d5a3d');
+    
+    // Create your game objects here
+    
+    // Set up keyboard input
+    cursors = this.input.keyboard.createCursorKeys();
+    
+    // Add any additional setup here
+}
+```
+
+### Create New Minimal update.js
+
+Replace entire update.js with:
+```javascript
+function update() {
+    if (!player) return;
+    
+    // Add your game logic here
+}
+```
+
+### Keep game.js As-Is
+
+```javascript
+window.addEventListener('load', () => {
+    const game = new Phaser.Game(gameConfig);
+    
+    console.log('Game initialized');
+    console.log('Phaser version:', Phaser.VERSION);
+});
+```
+
+## Features to Remove
+
+### 1. Multi-Stage System
+Remove all code related to:
+- Stage transitions
+- Stage backgrounds
+- Stage switching logic
+- Edge detection for stage changes
+- Interstitial screens
+
+**Files affected:**
+- config.js: Remove `currentStage`, `stageBackgrounds`
+- create.js: Remove `switchToStage()`, `createStageBackgrounds()`
+- update.js: Remove edge detection logic
+
+### 2. Popup Overlay System
+Remove all code related to:
+- Popup activation
+- Popup UI elements
+- Popup buttons (OK/Cancel)
+- Popup cleanup
+- Input blocking during popup
+
+**Files affected:**
+- config.js: Remove `popupOverlay`, `popupActive`
+- create.js: Remove `showPopup()`, `closePopup()`
+- preload.js: Remove `createPopupSprites()`
+- update.js: Remove popup activation check
+
+### 3. Square Dolls System
+Remove all code related to:
+- Square doll creation
+- Square doll sprites
+- Doll physics
+- Doll cleanup/recreation
+
+**Files affected:**
+- config.js: Remove `squareDolls`
+- preload.js: Remove `createSquareDollSprite()`
+- create.js: Remove `createSquareDollsForStage()`, `destroySquareDolls()`
+
+### 4. Procedural Sprite Generation
+Remove all POC-specific sprite generation:
+- Character sprite generation
+- UI sprite generation
+- Background sprite generation
+- Popup sprite generation
+- Doll sprite generation
+
+**Files affected:**
+- preload.js: Remove all `create*Sprite*()` functions
+
+Replace with actual asset loading:
+```javascript
+// Load real sprites instead
+this.load.spritesheet('player', 'assets/player.png', {
+    frameWidth: 32,
+    frameHeight: 48
+});
+this.load.image('background', 'assets/background.png');
+```
+
+### 5. POC-Specific Animations
+Remove these animation definitions:
+- 65-frame animation system
+- Walk animations (4 directions × 8 frames)
+- Jump animations (4 directions × 8 frames)
+- Standing animation
+
+**Files affected:**
+- create.js: Remove `createAnimations()` function
+- update.js: Remove `updatePlayerAnimation()`
+
+Replace with your own animation system based on your sprites.
+
+### 6. Demo Input Handling
+Remove POC-specific input:
+- D-pad touch controls
+- Action button
+- Movement state flags
+- Direction tracking
+
+**Files affected:**
+- config.js: Remove movement flags, direction state
+- create.js: Remove D-pad creation, mobile control setup
+- update.js: Remove demo input processing
+
+### 7. Web Audio POC Implementation
+Remove:
+- Background music generation
+- Jump sound effects
+- Sound toggle functionality
+- Audio context management
+
+**Files affected:**
+- create.js: Remove `initSound()`, `playBackgroundMusic()`, `playJumpSound()`
+- Remove sound button creation
+
+Replace with proper audio loading:
+```javascript
+this.load.audio('music', 'assets/music.mp3');
+this.load.audio('jump', 'assets/jump.mp3');
+```
+
+### 8. POC-Specific UI Elements
+Remove:
+- Menu button
+- Sound toggle button
+- Title text
+- Instructions text
+- D-pad buttons
+- Action button
+
+**Files affected:**
+- create.js: Remove `createUI()` function
+- preload.js: Remove `createUISprites()`
+
+## What to Keep
+
+### Core Framework
+✅ Keep:
+- Phaser 3 library (`lib/phaser.min.js`)
+- Basic game configuration structure
+- Physics engine setup (adjust gravity as needed)
+- Mobile detection logic
+- Keyboard input setup (cursors)
+
+### File Structure
+✅ Keep:
+- index.html
+- package.json (update description)
+- .gitignore
+- lib/ directory
+- js/ directory structure
+
+### Dependencies
+✅ Keep in package.json:
+```json
+{
+  "dependencies": {
+    "phaser": "^3.70.0"
+  },
+  "devDependencies": {
+    "jest": "^29.x.x",  // If keeping tests
+    "@types/jest": "^29.x.x"  // If keeping tests
+  }
+}
+```
+
+## Replacement Checklist
+
+After removing POC code, implement:
+
+- [ ] Load actual sprite assets
+- [ ] Create your game-specific animations
+- [ ] Implement your game logic
+- [ ] Add your game-specific physics
+- [ ] Create your UI elements
+- [ ] Load real audio files
+- [ ] Write your game-specific tests
+- [ ] Update README.md with your game info
+- [ ] Update package.json description
+- [ ] Create new requirements.txt for your game
+
+## Minimal Blank Game Template
+
+After all removals, you should have:
+
+```
+game-poc/
+├── index.html              # Keep as-is
+├── package.json            # Update description
+├── lib/
+│   └── phaser.min.js       # Keep
+├── js/
+│   ├── config.js           # Minimal version
+│   ├── preload.js          # Empty (add your loads)
+│   ├── create.js           # Empty (add your setup)
+│   ├── update.js           # Empty (add your logic)
+│   └── game.js             # Keep as-is
+└── assets/                 # Add your assets here
+    ├── sprites/
+    ├── audio/
+    └── backgrounds/
+```
+
+## Quick Start with Blank Template
+
+1. Remove all files listed in "Files to Remove Completely"
+2. Replace preload.js, create.js, update.js with minimal versions above
+3. Clean config.js to keep only essential variables
+4. Update package.json description
+5. Add your asset files to assets/
+6. Start building your game!
+
+## Verification
+
+After cleanup, run:
+```bash
+# Should show only minimal structure
+ls -la js/
+# Should have no POC-specific code
+grep -r "squareDolls" js/
+grep -r "currentStage" js/
+grep -r "popupOverlay" js/
+# Should return nothing
+```
+
+## Notes
+
+- Keep physics engine choice based on your game needs
+- Adjust gravity settings for your game type
+- Mobile detection can be kept if targeting mobile
+- Keep any utility functions that are game-agnostic
+- Document your new game's specific requirements
