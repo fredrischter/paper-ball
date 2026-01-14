@@ -58,16 +58,42 @@ jobs:
         path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
     
-    - name: Build Android Release APK (unsigned)
-      # Note: This step may fail if signing keys are not configured
-      # The unsigned APK is still useful for testing purposes
-      run: cd android && ./gradlew assembleRelease --no-daemon
-      continue-on-error: true
+    - name: Decode keystore
+      if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      run: |
+        if [ -n "$KEYSTORE_BASE64" ]; then
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+        fi
     
-    - name: Upload Release APK
+    - name: Build Android Release APK (signed)
+      if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      run: |
+        if [ -f android/app/release.keystore ]; then
+          cd android && ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=app/release.keystore \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            --no-daemon
+        else
+          echo "Keystore not found. Skipping signed release build."
+          echo "To build signed APKs, configure the following GitHub secrets:"
+          echo "  - KEYSTORE_BASE64: Base64-encoded keystore file"
+          echo "  - KEYSTORE_PASSWORD: Keystore password"
+          echo "  - KEY_ALIAS: Key alias"
+          echo "  - KEY_PASSWORD: Key password"
+        fi
+    
+    - name: Upload Release APK (signed)
       uses: actions/upload-artifact@v4
-      if: success()
+      if: ${{ (github.event_name != 'pull_request' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && hashFiles('android/app/build/outputs/apk/release/app-release.apk') != '' }}
       with:
-        name: paper-ball-release
-        path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+        name: paper-ball-release-signed
+        path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30

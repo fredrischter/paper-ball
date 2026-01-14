@@ -81,16 +81,46 @@ paper-ball/
 
 Este projeto possui um workflow do GitHub Actions que automaticamente compila a versão Android da aplicação. O workflow é executado:
 - Em cada push para os branches `main` ou `master`
-- Em cada Pull Request
+- Em cada Pull Request (apenas APK debug)
 - Manualmente através do GitHub Actions (workflow_dispatch)
 
-Os arquivos APK gerados (debug e release) ficam disponíveis como artefatos do workflow e podem ser baixados por 30 dias.
+Os arquivos APK gerados ficam disponíveis como artefatos do workflow e podem ser baixados por 30 dias.
 
 Para disparar manualmente o build:
 1. Vá até a aba "Actions" no repositório GitHub
 2. Selecione o workflow "Android Build"
 3. Clique em "Run workflow"
 4. Após a conclusão, baixe os APKs na seção "Artifacts"
+
+#### Configurar APK Assinado para Google Play Store
+
+Para gerar APKs assinados que podem ser enviados para a Google Play Store, configure os seguintes secrets no GitHub:
+
+1. **Gerar um keystore** (se ainda não tiver):
+```bash
+keytool -genkey -v -keystore release.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000
+```
+
+2. **Converter keystore para Base64**:
+```bash
+# Linux/Mac
+base64 release.keystore | tr -d '\n' > keystore.base64.txt
+
+# Windows (PowerShell)
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.keystore")) | Out-File -Encoding ASCII keystore.base64.txt
+```
+
+3. **Adicionar secrets no GitHub**:
+   - Vá em Settings → Secrets and variables → Actions → New repository secret
+   - Adicione os seguintes secrets:
+     - `KEYSTORE_BASE64`: Conteúdo do arquivo keystore.base64.txt
+     - `KEYSTORE_PASSWORD`: Senha do keystore
+     - `KEY_ALIAS`: Alias da chave (ex: my-key-alias)
+     - `KEY_PASSWORD`: Senha da chave
+
+Após configurar os secrets, o workflow automaticamente gerará APKs assinados em builds dos branches main/master. O APK assinado estará disponível como artefato "paper-ball-release-signed".
+
+**⚠️ Importante:** Nunca commite o arquivo keystore no repositório. Mantenha-o seguro e faça backup!
 
 ### Build Local - Android/iOS com Capacitor
 
